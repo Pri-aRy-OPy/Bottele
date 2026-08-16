@@ -1,10 +1,11 @@
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 
-const TELEGRAM_API =
-  `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
+const TG = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
 async function telegram(method, data) {
-  const response = await fetch(`${TELEGRAM_API}/${method}`, {
+  const r = await fetch(`${TG}/${method}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -12,7 +13,50 @@ async function telegram(method, data) {
     body: JSON.stringify(data)
   });
 
-  return response.json();
+  return r.json();
+}
+
+function firestoreUrl(path = "") {
+  return `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}?key=${FIREBASE_API_KEY}`;
+}
+
+async function saveUser(user) {
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+    console.log("Firebase belum dikonfigurasi");
+    return;
+  }
+
+  const userId = String(user.id);
+
+  const data = {
+    fields: {
+      telegram_id: {
+        stringValue: userId
+      },
+      username: {
+        stringValue: user.username || ""
+      },
+      first_name: {
+        stringValue: user.first_name || ""
+      },
+      last_name: {
+        stringValue: user.last_name || ""
+      },
+      last_seen: {
+        timestampValue: new Date().toISOString()
+      }
+    }
+  };
+
+  const url = firestoreUrl(`users/${encodeURIComponent(userId)}`);
+
+  await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
 }
 
 function detectPlatform(url) {
@@ -39,20 +83,11 @@ function detectPlatform(url) {
   }
 }
 
-function isValidUrl(text) {
-  try {
-    const url = new URL(text);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(200).json({
       ok: true,
-      message: "Telegram downloader webhook aktif"
+      message: "Bottele webhook aktif"
     });
   }
 
@@ -65,19 +100,29 @@ export default async function handler(req, res) {
     }
 
     const chatId = message.chat.id;
+    const user = message.from;
     const text = message.text?.trim() || "";
+
+    // Simpan user ke Firestore
+    if (user) {
+      await saveUser(user);
+    }
 
     if (text === "/start") {
       await telegram("sendMessage", {
         chat_id: chatId,
         text:
-`🎬 VIDEO DOWNLOADER
+`🎬 BOTTELE DOWNLOADER
+
+Selamat datang ${user?.first_name || ""}!
 
 Kirim link TikTok atau Instagram publik.
 
-Contoh:
-https://www.tiktok.com/...
-https://www.instagram.com/...`
+📥 Bot akan memproses link secara otomatis.
+
+Perintah:
+/start - Mulai bot
+/help - Bantuan`
       });
 
       return res.status(200).json({ ok: true });
@@ -87,22 +132,15 @@ https://www.instagram.com/...`
       await telegram("sendMessage", {
         chat_id: chatId,
         text:
-`📚 Bantuan
+`📚 BANTUAN BOTTELE
 
-• Kirim link TikTok
-• Kirim link Instagram
-• Pastikan konten dapat diakses secara publik
+Kirim link:
+• TikTok
+• Instagram
 
-Bot akan mengenali platform secara otomatis.`
-      });
-
-      return res.status(200).json({ ok: true });
-    }
-
-    if (!isValidUrl(text)) {
-      await telegram("sendMessage", {
-        chat_id: chatId,
-        text: "❌ Kirim URL TikTok atau Instagram yang valid."
+Contoh:
+https://www.tiktok.com/...
+https://www.instagram.com/...`
       });
 
       return res.status(200).json({ ok: true });
@@ -114,7 +152,7 @@ Bot akan mengenali platform secara otomatis.`
       await telegram("sendMessage", {
         chat_id: chatId,
         text:
-          "❌ Platform tidak didukung.\n\nSaat ini: TikTok dan Instagram."
+          "❌ Link tidak dikenali.\n\nKirim link TikTok atau Instagram."
       });
 
       return res.status(200).json({ ok: true });
@@ -124,41 +162,24 @@ Bot akan mengenali platform secara otomatis.`
       chat_id: chatId,
       text:
         `⏳ Link ${platform} diterima.\n\n` +
-        `Downloader backend belum dikonfigurasi.\n` +
-        `URL sudah berhasil dideteksi.`
+        `🔎 Sedang memproses...`
     });
 
     /*
-      DI SINI nanti kita hubungkan ke downloader API
-      yang kamu pilih.
-
-      Contoh konsep:
-
-      const result = await fetch(DOWNLOADER_API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.DOWNLOADER_KEY}`
-        },
-        body: JSON.stringify({
-          url: text
-        })
-      });
-
-      const data = await result.json();
-
-      Kemudian URL hasil download dikirim
-      menggunakan sendVideo/sendAudio.
+      DOWNLOAD API AKAN DIPASANG DI SINI.
     */
 
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({
+      ok: true,
+      platform
+    });
 
   } catch (error) {
     console.error(error);
 
     return res.status(500).json({
       ok: false,
-      error: "Internal server error"
+      error: error.message
     });
   }
-        }
+}
