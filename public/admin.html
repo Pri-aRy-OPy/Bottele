@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>Bottele Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      padding: 25px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 25px;
+    }
+
+    .refresh {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      padding: 11px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    .label {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .number {
+      font-size: 30px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .table-box {
+      background: #1e293b;
+      border-radius: 15px;
+      overflow: hidden;
+      border: 1px solid #334155;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #334155;
+      text-align: left;
+    }
+
+    th {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .status {
+      padding: 5px 9px;
+      border-radius: 20px;
+      background: #14532d;
+      color: #86efac;
+      font-size: 12px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: #94a3b8;
+    }
+
+    @media(max-width:700px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <header>
+    <div>
+      <h1>🤖 Bottele Dashboard</h1>
+      <div class="label">Telegram Downloader</div>
+    </div>
+
+    <button class="refresh" onclick="loadUsers()">
+      🔄 Refresh
+    </button>
+  </header>
+
+  <div class="stats">
+
+    <div class="card">
+      <div class="label">Total User</div>
+      <div class="number" id="totalUsers">0</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Aktif Hari Ini</div>
+      <div class="number" id="todayUsers">0</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Status</div>
+      <div class="number">
+        <span class="status">ONLINE</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="table-box">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Telegram ID</th>
+          <th>Nama</th>
+          <th>Terakhir Aktif</th>
+        </tr>
+      </thead>
+
+      <tbody id="users">
+        <tr>
+          <td colspan="4" class="empty">
+            Memuat data...
+          </td>
+        </tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+<script>
+
+const FIREBASE_PROJECT_ID =
+  "GANTI_PROJECT_ID";
+
+const FIREBASE_API_KEY =
+  "GANTI_API_KEY";
+
+async function loadUsers() {
+
+  const tbody =
+    document.getElementById("users");
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="4" class="empty">
+        Memuat data...
+      </td>
+    </tr>
+  `;
+
+  try {
+
+    const url =
+      `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users?key=${FIREBASE_API_KEY}`;
+
+    const response =
+      await fetch(url);
+
+    const data =
+      await response.json();
+
+    const documents =
+      data.documents || [];
+
+    document.getElementById("totalUsers")
+      .textContent = documents.length;
+
+    let today = 0;
+
+    const now =
+      new Date();
+
+    tbody.innerHTML = "";
+
+    if (!documents.length) {
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="empty">
+            Belum ada user.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    documents.forEach(doc => {
+
+      const f = doc.fields || {};
+
+      const username =
+        f.username?.stringValue || "-";
+
+      const id =
+        f.telegram_id?.stringValue || "-";
+
+      const first =
+        f.first_name?.stringValue || "";
+
+      const last =
+        f.last_name?.stringValue || "";
+
+      const name =
+        `${first} ${last}`.trim() || "-";
+
+      const timestamp =
+        f.last_seen?.timestampValue || "";
+
+      const date =
+        timestamp
+          ? new Date(timestamp)
+          : null;
+
+      if (
+        date &&
+        date.toDateString() === now.toDateString()
+      ) {
+        today++;
+      }
+
+      const tr =
+        document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>@${escapeHtml(username)}</td>
+        <td>${escapeHtml(id)}</td>
+        <td>${escapeHtml(name)}</td>
+        <td>
+          ${
+            date
+              ? date.toLocaleString("id-ID")
+              : "-"
+          }
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("todayUsers")
+      .textContent = today;
+
+  } catch (error) {
+
+    console.error(error);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="empty">
+          ❌ Gagal mengambil data.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function escapeHtml(text) {
+
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+loadUsers();
+
+</script>
+
+</body>
+        </html>
