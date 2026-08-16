@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Cloupanz — Video Downloader</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07060b;--card:#111019;--line:rgba(255,255,255,.08);--text:#fff;--muted:#9b96a8;--purple:#9b5cff;--purple2:#6d28d9;--green:#4ade80;--red:#fb7185}
+body{min-height:100vh;background:radial-gradient(circle at 50% -10%,rgba(139,92,246,.25),transparent 38%),var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+button,input{font:inherit}
+button{cursor:pointer}
+.container{width:min(940px,calc(100% - 30px));margin:auto}
+.navbar{height:72px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:800}
+.brand-icon{width:39px;height:39px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--purple),var(--purple2))}
+.admin-link{text-decoration:none;color:var(--muted);font-size:14px}
+.admin-link:hover{color:white}
+.hero{text-align:center;padding:65px 0 35px}
+.badge{display:inline-flex;padding:8px 13px;border-radius:30px;background:rgba(155,92,255,.1);border:1px solid rgba(155,92,255,.22);color:#c9a9ff;font-size:13px;margin-bottom:20px}
+.hero h1{font-size:clamp(38px,8vw,70px);line-height:1;letter-spacing:-3px}
+.gradient{background:linear-gradient(90deg,#fff,#c49cff,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{max-width:590px;margin:20px auto 0;color:var(--muted);font-size:17px;line-height:1.6}
+.download-card{margin-top:28px;padding:10px;border-radius:22px;background:rgba(17,16,25,.9);border:1px solid var(--line);box-shadow:0 25px 80px rgba(0,0,0,.4)}
+.url-row{display:flex;gap:10px}
+#urlInput{flex:1;min-width:0;height:62px;border:0;outline:none;border-radius:16px;padding:0 19px;background:#09080d;color:white;border:1px solid var(--line)}
+#urlInput::placeholder{color:#666172}
+#urlInput:focus{border-color:rgba(155,92,255,.6)}
+#downloadBtn{width:150px;border:0;border-radius:16px;color:white;font-weight:800;background:linear-gradient(135deg,var(--purple),var(--purple2))}
+#downloadBtn:disabled{opacity:.6;cursor:wait}
+.platforms{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:17px}
+.platform{padding:7px 11px;border-radius:20px;background:#121019;color:#858090;font-size:12px}
+#message{min-height:28px;text-align:center;margin:18px 0;color:var(--muted)}
+#message.error{color:var(--red)}
+#message.success{color:var(--green)}
+#result{margin-top:25px}
+.result-card{padding:20px;border-radius:22px;background:var(--card);border:1px solid var(--line)}
+.result-title{font-size:20px;font-weight:800;margin-bottom:18px;word-break:break-word}
+.preview{width:100%;max-height:580px;object-fit:contain;border-radius:16px;background:#000;display:block}
+.media-box{margin-top:18px}
+.audio-player{width:100%}
+.download-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}
+.download-link{display:flex;align-items:center;justify-content:center;min-height:50px;border-radius:14px;background:#1b1724;border:1px solid var(--line);color:white;text-decoration:none;font-weight:700}
+.download-link.primary{background:linear-gradient(135deg,var(--purple),var(--purple2));border:0}
+.section-title{margin-bottom:10px;color:#d6d1df;font-size:14px}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:45px 0}
+.feature{padding:22px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
+.feature-icon{font-size:28px;margin-bottom:14px}
+.feature h3{margin-bottom:7px}
+.feature p{color:var(--muted);font-size:14px;line-height:1.5}
+footer{padding:30px 0 45px;text-align:center;color:#686371;font-size:13px}
+@media(max-width:700px){
+.hero{padding-top:45px}
+.hero h1{letter-spacing:-2px}
+.url-row{flex-direction:column}
+#downloadBtn{width:100%;height:58px}
+.download-actions{grid-template-columns:1fr}
+.features{grid-template-columns:1fr}
+#urlInput{height:58px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<nav class="navbar">
+<div class="brand">
+<div class="brand-icon">☁️</div>
+<span>Cloupanz</span>
+</div>
+<a class="admin-link" href="/admin.html">Admin</a>
+</nav>
+
+<section class="hero">
+<div class="badge">⚡ Fast • Simple • Free</div>
+<h1>Download <span class="gradient">Tanpa Ribet</span></h1>
+<p>Tempel link video dari platform yang didukung dan dapatkan video atau audio dengan cepat.</p>
+
+<div class="download-card">
+<div class="url-row">
+<input id="urlInput" type="url" placeholder="Tempel link video di sini..." autocomplete="off">
+<button id="downloadBtn" onclick="downloadMedia()">Download</button>
+</div>
+
+<div class="platforms">
+<span class="platform">Instagram</span>
+<span class="platform">TikTok</span>
+<span class="platform">YouTube</span>
+<span class="platform">Facebook</span>
+</div>
+</div>
+
+<div id="message"></div>
+</section>
+
+<div id="result"></div>
+
+<section class="features">
+<div class="feature">
+<div class="feature-icon">⚡</div>
+<h3>Cepat</h3>
+<p>Proses link dengan cepat melalui backend downloader.</p>
+</div>
+
+<div class="feature">
+<div class="feature-icon">🎬</div>
+<h3>Video</h3>
+<p>Preview video langsung di browser jika URL hasil tersedia.</p>
+</div>
+
+<div class="feature">
+<div class="feature-icon">🎵</div>
+<h3>Audio</h3>
+<p>Audio juga bisa diputar dan diunduh jika API menyediakannya.</p>
+</div>
+</section>
+
+<footer>© 2026 Cloupanz</footer>
+</div>
+
+<script>
+const API_URL="/api/download";
+
+const urlInput=document.getElementById("urlInput");
+const downloadBtn=document.getElementById("downloadBtn");
+const message=document.getElementById("message");
+const result=document.getElementById("result");
+
+function showMessage(text,type=""){
+message.textContent=text;
+message.className=type;
+}
+
+function escapeHtml(value){
+return String(value??"")
+.replaceAll("&","&amp;")
+.replaceAll("<","&lt;")
+.replaceAll(">","&gt;")
+.replaceAll('"',"&quot;")
+.replaceAll("'","&#039;");
+}
+
+function findVideoUrl(data){
+return data.video_url||
+data.video||
+data.download_url||
+data.url||
+data.result?.video_url||
+data.result?.video||
+data.result?.download_url||
+data.data?.video_url||
+data.data?.video||
+data.data?.download_url||
+"";
+}
+
+function findAudioUrl(data){
+return data.audio_url||
+data.audio||
+data.result?.audio_url||
+data.result?.audio||
+data.data?.audio_url||
+data.data?.audio||
+"";
+}
+
+function findTitle(data){
+return data.title||
+data.result?.title||
+data.data?.title||
+"Hasil Download";
+}
+
+function findThumbnail(data){
+return data.thumbnail||
+data.thumbnail_url||
+data.result?.thumbnail||
+data.result?.thumbnail_url||
+data.data?.thumbnail||
+data.data?.thumbnail_url||
+"";
+}
+
+async function downloadMedia(){
+const url=urlInput.value.trim();
+
+if(!url){
+showMessage("Masukkan link terlebih dahulu.","error");
+urlInput.focus();
+return;
+}
+
+downloadBtn.disabled=true;
+downloadBtn.textContent="Memproses...";
+result.innerHTML="";
+showMessage("🔎 Sedang memproses link...");
+
+try{
+const controller=new AbortController();
+const timeout=setTimeout(()=>controller.abort(),60000);
+
+const response=await fetch(API_URL,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({url}),
+signal:controller.signal
+});
+
+clearTimeout(timeout);
+
+let data;
+
+try{
+data=await response.json();
+}catch{
+throw new Error("Server mengirim response yang tidak valid.");
+}
+
+if(!response.ok){
+throw new Error(data.message||data.error||"Download gagal.");
+}
+
+const videoUrl=findVideoUrl(data);
+const audioUrl=findAudioUrl(data);
+const title=findTitle(data);
+const thumbnail=findThumbnail(data);
+
+if(!videoUrl&&!audioUrl){
+throw new Error(data.message||"URL hasil download tidak ditemukan.");
+}
+
+renderResult({
+videoUrl,
+audioUrl,
+title,
+thumbnail
+});
+
+showMessage("✅ Berhasil diproses.","success");
+
+}catch(error){
+console.error(error);
+
+if(error.name==="AbortError"){
+showMessage("⏱️ Proses terlalu lama. Coba lagi.","error");
+}else{
+showMessage("❌ "+(error.message||"Terjadi kesalahan."),"error");
+}
+
+}finally{
+downloadBtn.disabled=false;
+downloadBtn.textContent="Download";
+}
+}
+
+function renderResult({videoUrl,audioUrl,title,thumbnail}){
+let html=`
+<div class="result-card">
+<div class="result-title">${escapeHtml(title)}</div>
+`;
+
+if(videoUrl){
+html+=`
+<div class="media-box">
+<div class="section-title">🎬 Video</div>
+<video
+class="preview"
+controls
+playsinline
+preload="metadata"
+${thumbnail?`poster="${escapeHtml(thumbnail)}"`:""}
+src="${escapeHtml(videoUrl)}"
+></video>
+</div>
+`;
+}
+
+if(audioUrl){
+html+=`
+<div class="media-box">
+<div class="section-title">🎵 Audio</div>
+<audio
+class="audio-player"
+controls
+preload="metadata"
+src="${escapeHtml(audioUrl)}"
+></audio>
+</div>
+`;
+}
+
+html+=`<div class="download-actions">`;
+
+if(videoUrl){
+html+=`
+<a
+class="download-link primary"
+href="${escapeHtml(videoUrl)}"
+target="_blank"
+rel="noopener"
+download
+>📥 Download Video</a>
+`;
+}
+
+if(audioUrl){
+html+=`
+<a
+class="download-link"
+href="${escapeHtml(audioUrl)}"
+target="_blank"
+rel="noopener"
+download
+>🎧 Download Audio</a>
+`;
+}
+
+html+=`
+</div>
+</div>
+`;
+
+result.innerHTML=html;
+
+result.scrollIntoView({
+behavior:"smooth",
+block:"start"
+});
+}
+
+urlInput.addEventListener("keydown",event=>{
+if(event.key==="Enter"){
+event.preventDefault();
+downloadMedia();
+}
+});
+</script>
+</body>
+</html>
