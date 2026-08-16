@@ -1,1196 +1,530 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1"
->
-
-<title>Cloupanz Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloupanz Admin Panel</title>
 
 <style>
-
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-
-  margin: 0;
-
-  min-height: 100vh;
-
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-
-  color: white;
-
-  background:
-    radial-gradient(
-      circle at top,
-      #24113e,
-      #090711 55%,
-      #050509
-    );
-
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top, #24123d 0%, #0a0810 45%, #050509 100%);
+    color: #fff;
 }
 
 .hidden {
-  display: none !important;
+    display: none !important;
 }
 
-/* =========================================
-   LOGIN
-========================================= */
+/* LOGIN */
 
 #loginPage {
-
-  min-height: 100vh;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  padding: 20px;
-
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
 }
 
 .login-card {
-
-  width: 100%;
-
-  max-width: 460px;
-
-  padding: 42px 30px;
-
-  border-radius: 28px;
-
-  background:
-    rgba(18, 16, 28, .92);
-
-  border:
-    1px solid
-    rgba(255,255,255,.10);
-
-  box-shadow:
-    0 30px 80px
-    rgba(0,0,0,.55);
-
-  text-align: center;
-
+    width: 100%;
+    max-width: 580px;
+    padding: 36px 30px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 28px;
+    background: rgba(18,16,27,.9);
+    box-shadow: 0 25px 80px rgba(0,0,0,.5);
+    text-align: center;
 }
 
 .logo {
-
-  width: 110px;
-
-  height: 110px;
-
-  margin:
-    0 auto 24px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  border-radius: 30px;
-
-  font-size: 52px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #a855f7,
-      #6d28d9
-    );
-
-  box-shadow:
-    0 15px 45px
-    rgba(139,92,246,.35);
-
+    width: 112px;
+    height: 112px;
+    margin: 0 auto 25px;
+    border-radius: 30px;
+    background: linear-gradient(135deg,#a855f7,#6d28d9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 58px;
+    box-shadow: 0 15px 45px rgba(139,92,246,.35);
 }
 
 .login-card h1 {
-
-  margin: 0;
-
-  font-size: 34px;
-
+    font-size: 38px;
+    margin-bottom: 8px;
 }
 
 .subtitle {
-
-  margin:
-    8px 0 30px;
-
-  color: #a7a3b5;
-
-  font-size: 16px;
-
+    color: #aaa5b5;
+    margin-bottom: 32px;
+    font-size: 18px;
 }
 
-.pin-box {
-
-  position: relative;
-
+.input-wrap {
+    position: relative;
 }
 
 #pinInput {
-
-  width: 100%;
-
-  padding:
-    18px 55px 18px 20px;
-
-  border-radius: 18px;
-
-  border:
-    1px solid
-    rgba(255,255,255,.10);
-
-  outline: none;
-
-  background: #0c0a10;
-
-  color: white;
-
-  font-size: 18px;
-
+    width: 100%;
+    height: 70px;
+    border-radius: 20px;
+    border: 1px solid #292531;
+    outline: none;
+    background: #0b0910;
+    color: white;
+    padding: 0 65px 0 22px;
+    font-size: 20px;
 }
 
 #pinInput:focus {
-
-  border-color: #a855f7;
-
-  box-shadow:
-    0 0 0 3px
-    rgba(168,85,247,.15);
-
+    border-color: #9b5cff;
+    box-shadow: 0 0 0 3px rgba(155,92,255,.12);
 }
 
 .eye {
-
-  position: absolute;
-
-  right: 18px;
-
-  top: 50%;
-
-  transform:
-    translateY(-50%);
-
-  border: 0;
-
-  background: transparent;
-
-  color: white;
-
-  font-size: 22px;
-
-  cursor: pointer;
-
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 25px;
 }
 
-#loginButton {
-
-  width: 100%;
-
-  margin-top: 18px;
-
-  padding: 17px;
-
-  border: 0;
-
-  border-radius: 18px;
-
-  color: white;
-
-  background:
-    linear-gradient(
-      135deg,
-      #a855f7,
-      #7c3aed
-    );
-
-  font-size: 17px;
-
-  font-weight: bold;
-
-  cursor: pointer;
-
+#loginBtn {
+    width: 100%;
+    height: 70px;
+    margin-top: 20px;
+    border: 0;
+    border-radius: 20px;
+    background: linear-gradient(135deg,#a855f7,#7c3aed);
+    color: white;
+    font-size: 21px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
-#loginButton:disabled {
-
-  opacity: .65;
-
-  cursor: wait;
-
+#loginBtn:active {
+    transform: scale(.98);
 }
 
 #loginError {
-
-  min-height: 24px;
-
-  margin-top: 15px;
-
-  color: #fb7185;
-
-  font-size: 14px;
-
+    min-height: 28px;
+    margin-top: 18px;
+    color: #ff667d;
+    font-size: 16px;
 }
 
-/* =========================================
-   APP
-========================================= */
+/* PANEL */
 
 #app {
+    min-height: 100vh;
+}
 
-  min-height: 100vh;
+.header {
+    padding: 22px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(10,8,15,.8);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-  padding: 20px;
+.header h2 {
+    font-size: 23px;
+}
 
+.logout {
+    border: 1px solid #392f49;
+    background: #17131d;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    cursor: pointer;
 }
 
 .container {
-
-  width: 100%;
-
-  max-width: 1100px;
-
-  margin: auto;
-
+    max-width: 1100px;
+    margin: auto;
+    padding: 25px;
 }
 
-header {
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
-  gap: 15px;
-
-  margin-bottom: 25px;
-
+.welcome {
+    padding: 25px;
+    border-radius: 22px;
+    background: linear-gradient(
+        135deg,
+        rgba(168,85,247,.18),
+        rgba(59,7,100,.1)
+    );
+    border: 1px solid rgba(168,85,247,.2);
+    margin-bottom: 25px;
 }
 
-header h1 {
-
-  margin: 0;
-
-  font-size: 27px;
-
+.welcome h1 {
+    margin-bottom: 8px;
 }
 
-.label {
-
-  margin-top: 5px;
-
-  color: #9993aa;
-
+.welcome p {
+    color: #aaa;
 }
 
-.actions {
-
-  display: flex;
-
-  gap: 10px;
-
-}
-
-button {
-
-  cursor: pointer;
-
-}
-
-.refresh,
-.logout {
-
-  border: 0;
-
-  padding: 12px 16px;
-
-  border-radius: 12px;
-
-  color: white;
-
-  font-weight: bold;
-
-}
-
-.refresh {
-
-  background: #7c3aed;
-
-}
-
-.logout {
-
-  background: #3f3f46;
-
-}
-
-/* =========================================
-   STATS
-========================================= */
-
-.stats {
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(3,1fr);
-
-  gap: 15px;
-
-  margin-bottom: 20px;
-
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 18px;
 }
 
 .card {
-
-  padding: 22px;
-
-  border-radius: 18px;
-
-  background:
-    rgba(24,21,35,.9);
-
-  border:
-    1px solid
-    rgba(255,255,255,.08);
-
+    padding: 25px;
+    border-radius: 20px;
+    background: #111019;
+    border: 1px solid #25212d;
 }
 
-.card-label {
-
-  color: #9f9aac;
-
-  font-size: 14px;
-
+.card .icon {
+    font-size: 32px;
+    margin-bottom: 15px;
 }
 
-.number {
-
-  margin-top: 8px;
-
-  font-size: 30px;
-
-  font-weight: bold;
-
+.card h3 {
+    margin-bottom: 8px;
 }
 
-/* =========================================
-   TABLE
-========================================= */
-
-.table-box {
-
-  overflow-x: auto;
-
-  border-radius: 18px;
-
-  background:
-    rgba(24,21,35,.9);
-
-  border:
-    1px solid
-    rgba(255,255,255,.08);
-
+.card p {
+    color: #aaa;
 }
 
-table {
-
-  width: 100%;
-
-  border-collapse:
-    collapse;
-
-  min-width: 650px;
-
+.section {
+    margin-top: 25px;
+    padding: 25px;
+    border-radius: 20px;
+    background: #111019;
+    border: 1px solid #25212d;
 }
 
-th,
-td {
-
-  padding: 15px;
-
-  text-align: left;
-
-  border-bottom:
-    1px solid
-    rgba(255,255,255,.07);
-
-}
-
-th {
-
-  color: #9f9aac;
-
-  font-size: 13px;
-
-}
-
-.empty {
-
-  padding: 40px;
-
-  text-align: center;
-
-  color: #8d8799;
-
+.section h2 {
+    margin-bottom: 15px;
 }
 
 .status {
-
-  display: inline-block;
-
-  padding:
-    6px 10px;
-
-  border-radius: 20px;
-
-  background: #14532d;
-
-  color: #86efac;
-
-  font-size: 12px;
-
+    display: inline-flex;
+    padding: 8px 14px;
+    border-radius: 30px;
+    background: rgba(34,197,94,.12);
+    color: #4ade80;
 }
 
-/* =========================================
-   MOBILE
-========================================= */
+/* MOBILE */
 
 @media(max-width:700px) {
+    .login-card {
+        padding: 30px 20px;
+    }
 
-  .stats {
+    .login-card h1 {
+        font-size: 32px;
+    }
 
-    grid-template-columns: 1fr;
+    .cards {
+        grid-template-columns: 1fr;
+    }
 
-  }
+    .header h2 {
+        font-size: 18px;
+    }
 
-  header {
-
-    align-items: flex-start;
-
-    flex-direction: column;
-
-  }
-
-  .actions {
-
-    width: 100%;
-
-  }
-
-  .refresh,
-  .logout {
-
-    flex: 1;
-
-  }
-
-  .login-card {
-
-    padding: 35px 20px;
-
-  }
-
+    .container {
+        padding: 18px;
+    }
 }
-
 </style>
-
 </head>
 
 <body>
 
-<!-- ========================================
-     LOGIN
-======================================== -->
+<!-- =========================
+     LOGIN PAGE
+========================= -->
 
-<section id="loginPage">
+<div id="loginPage">
 
-  <div class="login-card">
+    <div class="login-card">
 
-    <div class="logo">
-      ☁️
-    </div>
+        <div class="logo">
+            ☁️
+        </div>
 
-    <h1>
-      Cloupanz
-    </h1>
+        <h1>Cloupanz</h1>
 
-    <div class="subtitle">
-      Admin Control Panel
-    </div>
+        <div class="subtitle">
+            Admin Control Panel
+        </div>
 
-    <div class="pin-box">
+        <div class="input-wrap">
 
-      <input
-        id="pinInput"
-        type="password"
-        placeholder="Masukkan PIN admin"
-        autocomplete="off"
-      >
+            <input
+                id="pinInput"
+                type="password"
+                placeholder="Masukkan PIN"
+                autocomplete="off"
+            >
 
-      <button
-        class="eye"
-        type="button"
-        onclick="togglePin()"
-      >
-        👁️
-      </button>
+            <span
+                class="eye"
+                id="toggleEye"
+                onclick="togglePin()"
+            >👁️</span>
 
-    </div>
+        </div>
 
-    <button
-      id="loginButton"
-      type="button"
-      onclick="login()"
-    >
-      Masuk
-    </button>
+        <button
+            id="loginBtn"
+            type="button"
+            onclick="login()"
+        >
+            Masuk ke Panel
+        </button>
 
-    <div id="loginError"></div>
-
-  </div>
-
-</section>
-
-
-<!-- ========================================
-     APP
-======================================== -->
-
-<section
-  id="app"
-  class="hidden"
->
-
-<div class="container">
-
-  <header>
-
-    <div>
-
-      <h1>
-        🤖 Cloupanz Dashboard
-      </h1>
-
-      <div class="label">
-        Telegram Downloader
-      </div>
+        <div id="loginError"></div>
 
     </div>
-
-    <div class="actions">
-
-      <button
-        class="refresh"
-        onclick="loadUsers()"
-      >
-        🔄 Refresh
-      </button>
-
-      <button
-        class="logout"
-        onclick="logout()"
-      >
-        Keluar
-      </button>
-
-    </div>
-
-  </header>
-
-
-  <div class="stats">
-
-    <div class="card">
-
-      <div class="card-label">
-        Total User
-      </div>
-
-      <div
-        class="number"
-        id="totalUsers"
-      >
-        0
-      </div>
-
-    </div>
-
-
-    <div class="card">
-
-      <div class="card-label">
-        Aktif Hari Ini
-      </div>
-
-      <div
-        class="number"
-        id="todayUsers"
-      >
-        0
-      </div>
-
-    </div>
-
-
-    <div class="card">
-
-      <div class="card-label">
-        Status
-      </div>
-
-      <div class="number">
-
-        <span class="status">
-          ONLINE
-        </span>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <div class="table-box">
-
-    <table>
-
-      <thead>
-
-        <tr>
-
-          <th>
-            User
-          </th>
-
-          <th>
-            Telegram ID
-          </th>
-
-          <th>
-            Nama
-          </th>
-
-          <th>
-            Terakhir Aktif
-          </th>
-
-        </tr>
-
-      </thead>
-
-      <tbody id="users">
-
-        <tr>
-
-          <td
-            colspan="4"
-            class="empty"
-          >
-            Memuat data...
-          </td>
-
-        </tr>
-
-      </tbody>
-
-    </table>
-
-  </div>
 
 </div>
 
-</section>
+
+<!-- =========================
+     ADMIN PANEL
+========================= -->
+
+<div id="app" class="hidden">
+
+    <header class="header">
+
+        <h2>☁️ Cloupanz Admin</h2>
+
+        <button
+            class="logout"
+            onclick="logout()"
+        >
+            Keluar
+        </button>
+
+    </header>
+
+
+    <main class="container">
+
+        <div class="welcome">
+
+            <h1>Selamat datang 👋</h1>
+
+            <p>
+                Kamu berhasil masuk ke Admin Control Panel.
+            </p>
+
+        </div>
+
+
+        <div class="cards">
+
+            <div class="card">
+
+                <div class="icon">👥</div>
+
+                <h3>Users</h3>
+
+                <p>
+                    Kelola pengguna bot.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="icon">📥</div>
+
+                <h3>Downloads</h3>
+
+                <p>
+                    Pantau aktivitas download.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="icon">⚙️</div>
+
+                <h3>Settings</h3>
+
+                <p>
+                    Pengaturan bot.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <h2>Status Bot</h2>
+
+            <span class="status">
+                ● Online
+            </span>
+
+        </div>
+
+
+        <div class="section">
+
+            <h2>Informasi</h2>
+
+            <p style="color:#aaa;line-height:1.7;">
+                Panel admin Cloupanz aktif.
+                Untuk menghubungkan panel ini ke Firebase,
+                tambahkan konfigurasi Firebase pada bagian
+                JavaScript sesuai project kamu.
+            </p>
+
+        </div>
+
+    </main>
+
+</div>
 
 
 <script>
 
 /* =========================================
-   SESSION
+   KONFIGURASI PIN
 ========================================= */
 
-const SESSION_KEY =
-  "cloupanz_admin_token";
+/*
+   GANTI PIN DI SINI.
+
+   Contoh:
+   const ADMIN_PIN = "123456";
+*/
+
+const ADMIN_PIN = "Cloupanz";
+
+
+/* =========================================
+   ELEMENT
+========================================= */
+
+const pinInput = document.getElementById("pinInput");
+const loginError = document.getElementById("loginError");
+const loginPage = document.getElementById("loginPage");
+const app = document.getElementById("app");
 
 
 /* =========================================
    LOGIN
 ========================================= */
 
-async function login() {
+function login() {
 
-  const input =
-    document.getElementById(
-      "pinInput"
-    );
+    const pin = String(pinInput.value || "").trim();
 
-  const button =
-    document.getElementById(
-      "loginButton"
-    );
+    console.log("PIN yang dibaca:", pin);
 
-  const error =
-    document.getElementById(
-      "loginError"
-    );
+    if (!pin) {
 
-  const pin =
-    input.value.trim();
+        loginError.textContent =
+            "❌ PIN wajib diisi.";
 
-  error.textContent = "";
-
-  if (!pin) {
-
-    error.textContent =
-      "Masukkan PIN terlebih dahulu.";
-
-    return;
-  }
-
-  button.disabled = true;
-
-  button.textContent =
-    "Memeriksa...";
-
-  try {
-
-    const controller =
-      new AbortController();
-
-    const timeout =
-      setTimeout(
-        () => controller.abort(),
-        10000
-      );
-
-    const response =
-      await fetch(
-        "/api/admin",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-              pin
-            }),
-
-          signal:
-            controller.signal
-        }
-      );
-
-    clearTimeout(timeout);
-
-    let data;
-
-    try {
-
-      data =
-        await response.json();
-
-    } catch {
-
-      throw new Error(
-        "Server memberikan respons tidak valid."
-      );
+        return;
     }
 
-    if (!response.ok || !data.ok) {
 
-      throw new Error(
-        data.message ||
-        "PIN salah."
-      );
+    if (pin !== ADMIN_PIN) {
+
+        loginError.textContent =
+            "❌ PIN salah.";
+
+        pinInput.value = "";
+
+        pinInput.focus();
+
+        return;
     }
+
+
+    /* LOGIN BERHASIL */
 
     sessionStorage.setItem(
-      SESSION_KEY,
-      data.token
+        "cloupanz_admin_login",
+        "true"
     );
 
-    input.value = "";
 
-    showApp();
+    loginError.textContent = "";
 
-    await loadUsers();
 
-  } catch (err) {
+    loginPage.classList.add("hidden");
 
-    console.error(err);
+    app.classList.remove("hidden");
 
-    if (
-      err.name ===
-      "AbortError"
-    ) {
+}
 
-      error.textContent =
-        "Server terlalu lama merespons.";
+
+/* =========================================
+   ENTER UNTUK LOGIN
+========================================= */
+
+pinInput.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            login();
+
+        }
+
+    }
+);
+
+
+/* =========================================
+   SHOW / HIDE PIN
+========================================= */
+
+function togglePin() {
+
+    if (pinInput.type === "password") {
+
+        pinInput.type = "text";
+
+        document.getElementById(
+            "toggleEye"
+        ).textContent = "🙈";
 
     } else {
 
-      error.textContent =
-        err.message ||
-        "Gagal login.";
+        pinInput.type = "password";
+
+        document.getElementById(
+            "toggleEye"
+        ).textContent = "👁️";
 
     }
-
-  } finally {
-
-    button.disabled = false;
-
-    button.textContent =
-      "Masuk";
-
-  }
-
-}
-
-
-/* =========================================
-   SESSION CHECK
-========================================= */
-
-async function checkSession() {
-
-  const token =
-    sessionStorage.getItem(
-      SESSION_KEY
-    );
-
-  if (!token) {
-
-    showLogin();
-
-    return;
-
-  }
-
-  try {
-
-    const response =
-      await fetch(
-        "/api/admin",
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
-        }
-      );
-
-    if (!response.ok) {
-
-      throw new Error(
-        "Session expired."
-      );
-
-    }
-
-    showApp();
-
-    await loadUsers();
-
-  } catch {
-
-    sessionStorage.removeItem(
-      SESSION_KEY
-    );
-
-    showLogin();
-
-  }
-
-}
-
-
-/* =========================================
-   SHOW LOGIN
-========================================= */
-
-function showLogin() {
-
-  document
-    .getElementById("app")
-    .classList.add("hidden");
-
-  document
-    .getElementById("loginPage")
-    .classList.remove("hidden");
-
-}
-
-
-/* =========================================
-   SHOW APP
-========================================= */
-
-function showApp() {
-
-  document
-    .getElementById("loginPage")
-    .classList.add("hidden");
-
-  document
-    .getElementById("app")
-    .classList.remove("hidden");
-
-}
-
-
-/* =========================================
-   LOAD USERS
-========================================= */
-
-async function loadUsers() {
-
-  const tbody =
-    document.getElementById(
-      "users"
-    );
-
-  const token =
-    sessionStorage.getItem(
-      SESSION_KEY
-    );
-
-  if (!token) {
-
-    showLogin();
-
-    return;
-
-  }
-
-  tbody.innerHTML = `
-    <tr>
-      <td
-        colspan="4"
-        class="empty"
-      >
-        Memuat data...
-      </td>
-    </tr>
-  `;
-
-  try {
-
-    const response =
-      await fetch(
-        "/api/admin",
-        {
-          method: "GET",
-
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if (
-      response.status === 401
-    ) {
-
-      logout();
-
-      return;
-
-    }
-
-    if (
-      !response.ok ||
-      !data.ok
-    ) {
-
-      throw new Error(
-        data.message ||
-        "Gagal mengambil data."
-      );
-
-    }
-
-    const documents =
-      data.users || [];
-
-    document
-      .getElementById(
-        "totalUsers"
-      )
-      .textContent =
-        documents.length;
-
-    const now =
-      new Date();
-
-    let today = 0;
-
-    tbody.innerHTML = "";
-
-    if (!documents.length) {
-
-      tbody.innerHTML = `
-        <tr>
-          <td
-            colspan="4"
-            class="empty"
-          >
-            Belum ada user.
-          </td>
-        </tr>
-      `;
-
-      document
-        .getElementById(
-          "todayUsers"
-        )
-        .textContent = "0";
-
-      return;
-
-    }
-
-    documents.forEach(
-      doc => {
-
-        const f =
-          doc.fields || {};
-
-        const username =
-          f.username?.stringValue ||
-          "-";
-
-        const id =
-          f.telegram_id?.stringValue ||
-          "-";
-
-        const first =
-          f.first_name?.stringValue ||
-          "";
-
-        const last =
-          f.last_name?.stringValue ||
-          "";
-
-        const name =
-          `${first} ${last}`
-            .trim() || "-";
-
-        const timestamp =
-          f.last_seen?.timestampValue ||
-          "";
-
-        const date =
-          timestamp
-            ? new Date(timestamp)
-            : null;
-
-        if (
-          date &&
-          date.toDateString() ===
-          now.toDateString()
-        ) {
-
-          today++;
-
-        }
-
-        const tr =
-          document.createElement(
-            "tr"
-          );
-
-        tr.innerHTML = `
-
-          <td>
-            @${escapeHtml(username)}
-          </td>
-
-          <td>
-            ${escapeHtml(id)}
-          </td>
-
-          <td>
-            ${escapeHtml(name)}
-          </td>
-
-          <td>
-            ${
-              date
-                ? date.toLocaleString(
-                    "id-ID"
-                  )
-                : "-"
-            }
-          </td>
-
-        `;
-
-        tbody.appendChild(tr);
-
-      }
-    );
-
-    document
-      .getElementById(
-        "todayUsers"
-      )
-      .textContent =
-        today;
-
-  } catch (error) {
-
-    console.error(error);
-
-    tbody.innerHTML = `
-
-      <tr>
-
-        <td
-          colspan="4"
-          class="empty"
-        >
-
-          ❌
-          ${escapeHtml(
-            error.message ||
-            "Gagal mengambil data."
-          )}
-
-        </td>
-
-      </tr>
-
-    `;
-
-  }
 
 }
 
@@ -1201,95 +535,49 @@ async function loadUsers() {
 
 function logout() {
 
-  sessionStorage.removeItem(
-    SESSION_KEY
-  );
-
-  document
-    .getElementById("app")
-    .classList.add("hidden");
-
-  document
-    .getElementById("loginPage")
-    .classList.remove("hidden");
-
-  document
-    .getElementById("pinInput")
-    .value = "";
-
-}
-
-
-/* =========================================
-   TOGGLE PIN
-========================================= */
-
-function togglePin() {
-
-  const input =
-    document.getElementById(
-      "pinInput"
+    sessionStorage.removeItem(
+        "cloupanz_admin_login"
     );
 
-  input.type =
-    input.type === "password"
-      ? "text"
-      : "password";
+    app.classList.add("hidden");
+
+    loginPage.classList.remove("hidden");
+
+    pinInput.value = "";
+
+    loginError.textContent = "";
+
+    pinInput.focus();
 
 }
 
 
 /* =========================================
-   ESCAPE HTML
+   CHECK SESSION
 ========================================= */
 
-function escapeHtml(value) {
+function checkSession() {
 
-  return String(value ?? "")
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
+    const loggedIn =
+        sessionStorage.getItem(
+            "cloupanz_admin_login"
+        );
 
-}
+    if (loggedIn === "true") {
 
+        loginPage.classList.add("hidden");
 
-/* =========================================
-   ENTER
-========================================= */
+        app.classList.remove("hidden");
 
-document
-  .getElementById("pinInput")
-  .addEventListener(
-    "keydown",
-    event => {
+    } else {
 
-      if (
-        event.key === "Enter"
-      ) {
+        loginPage.classList.remove("hidden");
 
-        login();
-
-      }
+        app.classList.add("hidden");
 
     }
-  );
+
+}
 
 
 /* =========================================
