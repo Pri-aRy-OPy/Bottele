@@ -1348,7 +1348,7 @@ Coba lagi besok.`
          TELEGRAM
       ======================= */
 
-      const result =
+            const result =
         await sendVideo(
           chatId,
           video.buffer,
@@ -1356,4 +1356,58 @@ Coba lagi besok.`
           info.title,
           platform
         );
-  
+
+      if (!result?.ok) {
+        throw new Error(
+          result?.description ||
+          "Telegram gagal mengirim video."
+        );
+      }
+
+      // Hitung download hanya setelah berhasil dikirim
+      if (!status.admin) {
+        await addDownload(user);
+      }
+
+      return res.status(200).json({
+        ok: true
+      });
+
+    } catch (error) {
+
+      console.error(
+        "DOWNLOAD ERROR:",
+        error
+      );
+
+      await telegram(
+        "sendMessage",
+        {
+          chat_id: chatId,
+          text:
+            `❌ Gagal mengambil video.\n\n` +
+            `${error?.message || "Terjadi kesalahan."}`
+        }
+      );
+
+      return res.status(200).json({
+        ok: true,
+        error: true
+      });
+    }
+
+  } catch (error) {
+
+    console.error(
+      "WEBHOOK ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      error:
+        error?.message ||
+        "Internal server error"
+    });
+  }
+}
