@@ -2,124 +2,459 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Bottele Dashboard</title>
+  <title>Cloupanz Admin</title>
 
   <style>
+    :root {
+      --bg: #08070d;
+      --panel: #11101a;
+      --panel2: #171521;
+      --border: rgba(255,255,255,.08);
+      --text: #f7f4ff;
+      --muted: #9691a8;
+      --purple: #9b5cff;
+      --purple2: #6f35d9;
+      --green: #39d98a;
+      --red: #ff5c72;
+    }
+
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(155,92,255,.18), transparent 35%),
+        radial-gradient(circle at 100% 20%, rgba(111,53,217,.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
     }
 
-    .container {
-      max-width: 1100px;
-      margin: auto;
-      padding: 25px;
+    button,
+    input {
+      font: inherit;
     }
 
-    header {
+    .hidden {
+      display: none !important;
+    }
+
+    /* ================= LOGIN ================= */
+
+    .login-page {
+      min-height: 100vh;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 25px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 25px;
-    }
-
-    .refresh {
-      background: #2563eb;
-      color: white;
-      border: 0;
-      padding: 11px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-
-    .card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 15px;
+      justify-content: center;
       padding: 20px;
     }
 
-    .label {
-      color: #94a3b8;
+    .login-box {
+      width: 100%;
+      max-width: 390px;
+      background: rgba(17,16,26,.88);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      padding: 30px;
+      box-shadow: 0 30px 100px rgba(0,0,0,.45);
+      backdrop-filter: blur(20px);
+    }
+
+    .logo {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 18px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(145deg, #b87cff, #692ed0);
+      box-shadow:
+        0 15px 40px rgba(139,72,255,.35);
+      font-size: 36px;
+    }
+
+    .login-title {
+      text-align: center;
+      margin: 0;
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .login-subtitle {
+      text-align: center;
+      color: var(--muted);
       font-size: 14px;
+      margin: 8px 0 25px;
     }
 
-    .number {
-      font-size: 30px;
-      font-weight: bold;
-      margin-top: 8px;
+    .input-wrap {
+      position: relative;
     }
 
-    .table-box {
-      background: #1e293b;
+    .input {
+      width: 100%;
+      height: 54px;
+      border: 1px solid var(--border);
+      background: #0c0b12;
+      color: white;
+      outline: none;
       border-radius: 15px;
+      padding: 0 48px 0 17px;
+    }
+
+    .input:focus {
+      border-color: rgba(155,92,255,.65);
+      box-shadow: 0 0 0 4px rgba(155,92,255,.08);
+    }
+
+    .show-pin {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      width: 38px;
+      height: 38px;
+      border: 0;
+      background: transparent;
+      color: #aaa4ba;
+      cursor: pointer;
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 54px;
+      margin-top: 13px;
+      border: 0;
+      border-radius: 15px;
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, #a968ff, #7037d5);
+      box-shadow: 0 12px 30px rgba(124,55,220,.25);
+    }
+
+    .login-btn:active {
+      transform: scale(.98);
+    }
+
+    .login-error {
+      color: #ff7182;
+      text-align: center;
+      font-size: 13px;
+      margin-top: 13px;
+      min-height: 18px;
+    }
+
+    /* ================= APP ================= */
+
+    .app {
+      max-width: 1180px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .brand-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg,#b87cff,#692ed0);
+      box-shadow: 0 10px 30px rgba(139,72,255,.25);
+      font-size: 25px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: white;
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn:hover {
+      border-color: rgba(155,92,255,.4);
+    }
+
+    .btn-purple {
+      background: linear-gradient(135deg,#9558f5,#7036d0);
+      border: 0;
+    }
+
+    /* ================= STATS ================= */
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 13px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      background: rgba(17,16,26,.88);
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      padding: 19px;
+      min-height: 125px;
+    }
+
+    .stat-icon {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat-value {
+      font-size: 27px;
+      font-weight: 850;
+      margin-top: 5px;
+    }
+
+    /* ================= CONTENT ================= */
+
+    .panel {
+      background: rgba(17,16,26,.88);
+      border: 1px solid var(--border);
+      border-radius: 21px;
       overflow: hidden;
-      border: 1px solid #334155;
+    }
+
+    .panel-head {
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .panel-subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .search {
+      width: 240px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0c0b12;
+      color: white;
+      outline: none;
+      padding: 0 13px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 700px;
     }
 
     th,
     td {
-      padding: 15px;
-      border-bottom: 1px solid #334155;
       text-align: left;
+      padding: 15px 17px;
+      border-bottom: 1px solid rgba(255,255,255,.055);
     }
 
     th {
-      color: #94a3b8;
+      color: #898398;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    td {
       font-size: 13px;
     }
 
-    .status {
-      padding: 5px 9px;
-      border-radius: 20px;
-      background: #14532d;
-      color: #86efac;
-      font-size: 12px;
+    tbody tr:hover {
+      background: rgba(255,255,255,.018);
+    }
+
+    .user {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(155,92,255,.13);
+      color: #bf96ff;
+      font-weight: 800;
+    }
+
+    .user-name {
+      font-weight: 700;
+    }
+
+    .username {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .badge-admin {
+      background: rgba(155,92,255,.13);
+      color: #c49bff;
+    }
+
+    .badge-user {
+      background: rgba(255,255,255,.06);
+      color: #aaa4b7;
+    }
+
+    .download-count {
+      font-weight: 750;
     }
 
     .empty {
       text-align: center;
-      padding: 40px;
-      color: #94a3b8;
+      color: var(--muted);
+      padding: 45px 20px;
     }
 
-    @media(max-width:700px) {
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 35px;
+    }
+
+    .error {
+      color: #ff7182;
+    }
+
+    /* ================= MOBILE ================= */
+
+    @media (max-width: 800px) {
       .stats {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
       }
 
-      table {
-        font-size: 12px;
+      .topbar {
+        align-items: flex-start;
       }
 
-      th,
-      td {
-        padding: 10px;
+      .actions .btn span {
+        display: none;
+      }
+
+      .search {
+        width: 100%;
+      }
+
+      .panel-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        padding: 13px;
+      }
+
+      .stats {
+        gap: 9px;
+      }
+
+      .stat {
+        padding: 15px;
+        min-height: 110px;
+      }
+
+      .stat-value {
+        font-size: 23px;
+      }
+
+      .brand h1 {
+        font-size: 19px;
+      }
+
+      .brand-icon {
+        width: 44px;
+        height: 44px;
+      }
+
+      .login-box {
+        padding: 24px 19px;
       }
     }
   </style>
@@ -127,208 +462,807 @@
 
 <body>
 
-<div class="container">
+<!-- ================= LOGIN ================= -->
 
-  <header>
-    <div>
-      <h1>🤖 Bottele Dashboard</h1>
-      <div class="label">Telegram Downloader</div>
+<section id="loginPage" class="login-page">
+
+  <div class="login-box">
+
+    <div class="logo">☁️</div>
+
+    <h1 class="login-title">
+      Cloupanz
+    </h1>
+
+    <div class="login-subtitle">
+      Admin Control Panel
     </div>
 
-    <button class="refresh" onclick="loadUsers()">
-      🔄 Refresh
+    <div class="input-wrap">
+
+      <input
+        id="pinInput"
+        class="input"
+        type="password"
+        placeholder="Masukkan PIN admin"
+        autocomplete="off"
+      >
+
+      <button
+        class="show-pin"
+        type="button"
+        onclick="togglePin()"
+      >
+        👁
+      </button>
+
+    </div>
+
+    <button
+      class="login-btn"
+      onclick="login()"
+      id="loginButton"
+    >
+      Masuk ke Panel
     </button>
+
+    <div
+      id="loginError"
+      class="login-error"
+    ></div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= ADMIN APP ================= -->
+
+<section
+  id="app"
+  class="app hidden"
+>
+
+  <header class="topbar">
+
+    <div class="brand">
+
+      <div class="brand-icon">
+        ☁️
+      </div>
+
+      <div>
+        <h1>Cloupanz</h1>
+        <p>Admin Control Panel</p>
+      </div>
+
+    </div>
+
+    <div class="actions">
+
+      <button
+        class="btn"
+        onclick="loadData()"
+      >
+        🔄 <span>Refresh</span>
+      </button>
+
+      <button
+        class="btn"
+        onclick="logout()"
+      >
+        🚪 <span>Keluar</span>
+      </button>
+
+    </div>
+
   </header>
+
+
+  <!-- ================= STATS ================= -->
 
   <div class="stats">
 
-    <div class="card">
-      <div class="label">Total User</div>
-      <div class="number" id="totalUsers">0</div>
-    </div>
+    <div class="stat">
 
-    <div class="card">
-      <div class="label">Aktif Hari Ini</div>
-      <div class="number" id="todayUsers">0</div>
-    </div>
-
-    <div class="card">
-      <div class="label">Status</div>
-      <div class="number">
-        <span class="status">ONLINE</span>
+      <div class="stat-icon">
+        👥
       </div>
+
+      <div class="stat-label">
+        TOTAL USER
+      </div>
+
+      <div
+        id="totalUsers"
+        class="stat-value"
+      >
+        0
+      </div>
+
+    </div>
+
+
+    <div class="stat">
+
+      <div class="stat-icon">
+        🟢
+      </div>
+
+      <div class="stat-label">
+        AKTIF HARI INI
+      </div>
+
+      <div
+        id="todayUsers"
+        class="stat-value"
+      >
+        0
+      </div>
+
+    </div>
+
+
+    <div class="stat">
+
+      <div class="stat-icon">
+        📥
+      </div>
+
+      <div class="stat-label">
+        TOTAL DOWNLOAD
+      </div>
+
+      <div
+        id="totalDownloads"
+        class="stat-value"
+      >
+        0
+      </div>
+
+    </div>
+
+
+    <div class="stat">
+
+      <div class="stat-icon">
+        👑
+      </div>
+
+      <div class="stat-label">
+        ADMIN
+      </div>
+
+      <div
+        id="adminStatus"
+        class="stat-value"
+      >
+        -
+      </div>
+
     </div>
 
   </div>
 
-  <div class="table-box">
 
-    <table>
+  <!-- ================= USERS ================= -->
 
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Telegram ID</th>
-          <th>Nama</th>
-          <th>Terakhir Aktif</th>
-        </tr>
-      </thead>
+  <div class="panel">
 
-      <tbody id="users">
-        <tr>
-          <td colspan="4" class="empty">
-            Memuat data...
-          </td>
-        </tr>
-      </tbody>
+    <div class="panel-head">
 
-    </table>
+      <div>
+        <h2 class="panel-title">
+          Pengguna Bot
+        </h2>
+
+        <p class="panel-subtitle">
+          Daftar pengguna yang tersimpan di Firestore
+        </p>
+      </div>
+
+      <input
+        id="searchInput"
+        class="search"
+        type="search"
+        placeholder="🔎 Cari user..."
+        oninput="filterUsers()"
+      >
+
+    </div>
+
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>User</th>
+            <th>Telegram ID</th>
+            <th>Download</th>
+            <th>Status</th>
+            <th>Terakhir Aktif</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="usersTable">
+
+          <tr>
+            <td
+              colspan="5"
+              class="loading"
+            >
+              Memuat data...
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
 
   </div>
 
-</div>
+</section>
+
 
 <script>
 
-const FIREBASE_PROJECT_ID =
-  "GANTI_PROJECT_ID";
+  let users = [];
 
-const FIREBASE_API_KEY =
-  "GANTI_API_KEY";
+  /* ==========================================
+     LOGIN
+  ========================================== */
 
-async function loadUsers() {
+  async function login() {
 
-  const tbody =
-    document.getElementById("users");
+    const pin =
+      document
+        .getElementById("pinInput")
+        .value
+        .trim();
 
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="4" class="empty">
-        Memuat data...
-      </td>
-    </tr>
-  `;
+    const error =
+      document.getElementById("loginError");
 
-  try {
+    const button =
+      document.getElementById("loginButton");
 
-    const url =
-      `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users?key=${FIREBASE_API_KEY}`;
+    error.textContent = "";
 
-    const response =
-      await fetch(url);
+    if (!pin) {
 
-    const data =
-      await response.json();
+      error.textContent =
+        "Masukkan PIN admin.";
 
-    const documents =
-      data.documents || [];
+      return;
+    }
 
-    document.getElementById("totalUsers")
-      .textContent = documents.length;
+    button.disabled = true;
+    button.textContent = "Memeriksa...";
 
-    let today = 0;
+    try {
 
-    const now =
-      new Date();
+      const response =
+        await fetch(
+          "/api/admin?action=login",
+          {
+            method: "POST",
 
-    tbody.innerHTML = "";
+            headers: {
+              "Content-Type":
+                "application/json",
+              "x-admin-pin": pin
+            }
+          }
+        );
 
-    if (!documents.length) {
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.ok) {
+
+        throw new Error(
+          data.message ||
+          "PIN salah."
+        );
+
+      }
+
+      /*
+       * Simpan hanya selama tab/browser
+       * masih aktif.
+       */
+      sessionStorage.setItem(
+        "cloupanz_admin_pin",
+        pin
+      );
+
+      showApp();
+
+    } catch (err) {
+
+      error.textContent =
+        "❌ " +
+        (err.message ||
+          "Gagal masuk.");
+
+    } finally {
+
+      button.disabled = false;
+      button.textContent =
+        "Masuk ke Panel";
+
+    }
+
+  }
+
+
+  /* ==========================================
+     CHECK SESSION
+  ========================================== */
+
+  function checkSession() {
+
+    const pin =
+      sessionStorage.getItem(
+        "cloupanz_admin_pin"
+      );
+
+    if (pin) {
+
+      showApp();
+
+    }
+
+  }
+
+
+  function showApp() {
+
+    document
+      .getElementById("loginPage")
+      .classList.add("hidden");
+
+    document
+      .getElementById("app")
+      .classList.remove("hidden");
+
+    loadData();
+
+  }
+
+
+  /* ==========================================
+     LOAD DATA
+  ========================================== */
+
+  async function loadData() {
+
+    const pin =
+      sessionStorage.getItem(
+        "cloupanz_admin_pin"
+      );
+
+    if (!pin) {
+
+      logout();
+
+      return;
+
+    }
+
+    const tbody =
+      document.getElementById(
+        "usersTable"
+      );
+
+    tbody.innerHTML = `
+      <tr>
+        <td
+          colspan="5"
+          class="loading"
+        >
+          Memuat data...
+        </td>
+      </tr>
+    `;
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/admin?action=users",
+          {
+            headers: {
+              "x-admin-pin": pin
+            }
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        response.status === 401
+      ) {
+
+        logout();
+
+        return;
+
+      }
+
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
+
+        throw new Error(
+          data.message ||
+          "Gagal mengambil data."
+        );
+
+      }
+
+      users =
+        data.users || [];
+
+      document
+        .getElementById("totalUsers")
+        .textContent =
+          data.stats.totalUsers;
+
+      document
+        .getElementById("todayUsers")
+        .textContent =
+          data.stats.todayUsers;
+
+      document
+        .getElementById("totalDownloads")
+        .textContent =
+          data.stats.totalDownloads;
+
+      document
+        .getElementById("adminStatus")
+        .textContent =
+          data.stats.adminExists
+            ? "AKTIF"
+            : "BELUM";
+
+      renderUsers(users);
+
+    } catch (err) {
 
       tbody.innerHTML = `
         <tr>
-          <td colspan="4" class="empty">
+          <td
+            colspan="5"
+            class="empty error"
+          >
+            ❌ ${escapeHtml(
+              err.message ||
+              "Gagal mengambil data."
+            )}
+          </td>
+        </tr>
+      `;
+
+    }
+
+  }
+
+
+  /* ==========================================
+     RENDER USERS
+  ========================================== */
+
+  function renderUsers(list) {
+
+    const tbody =
+      document.getElementById(
+        "usersTable"
+      );
+
+    tbody.innerHTML = "";
+
+    if (!list.length) {
+
+      tbody.innerHTML = `
+        <tr>
+          <td
+            colspan="5"
+            class="empty"
+          >
             Belum ada user.
           </td>
         </tr>
       `;
 
       return;
+
     }
 
-    documents.forEach(doc => {
-
-      const f = doc.fields || {};
-
-      const username =
-        f.username?.stringValue || "-";
-
-      const id =
-        f.telegram_id?.stringValue || "-";
-
-      const first =
-        f.first_name?.stringValue || "";
-
-      const last =
-        f.last_name?.stringValue || "";
-
-      const name =
-        `${first} ${last}`.trim() || "-";
-
-      const timestamp =
-        f.last_seen?.timestampValue || "";
-
-      const date =
-        timestamp
-          ? new Date(timestamp)
-          : null;
-
-      if (
-        date &&
-        date.toDateString() === now.toDateString()
-      ) {
-        today++;
-      }
+    list.forEach(user => {
 
       const tr =
         document.createElement("tr");
 
+      const name =
+        user.name || "Tanpa Nama";
+
+      const username =
+        user.username
+          ? "@" + user.username
+          : "Tidak ada username";
+
+      const initial =
+        name
+          .charAt(0)
+          .toUpperCase();
+
+      const admin =
+        user.isAdmin === true;
+
+      const lastSeen =
+        user.lastSeen
+          ? formatDate(user.lastSeen)
+          : "-";
+
       tr.innerHTML = `
-        <td>@${escapeHtml(username)}</td>
-        <td>${escapeHtml(id)}</td>
-        <td>${escapeHtml(name)}</td>
+
         <td>
-          ${
-            date
-              ? date.toLocaleString("id-ID")
-              : "-"
-          }
+
+          <div class="user">
+
+            <div class="avatar">
+              ${escapeHtml(initial)}
+            </div>
+
+            <div>
+
+              <div class="user-name">
+                ${escapeHtml(name)}
+              </div>
+
+              <div class="username">
+                ${escapeHtml(username)}
+              </div>
+
+            </div>
+
+          </div>
+
         </td>
+
+
+        <td>
+          ${escapeHtml(
+            user.telegramId || "-"
+          )}
+        </td>
+
+
+        <td>
+
+          <span class="download-count">
+            ${Number(
+              user.downloads || 0
+            )}
+          </span>
+
+        </td>
+
+
+        <td>
+
+          ${
+            admin
+
+              ? `
+                <span
+                  class="badge badge-admin"
+                >
+                  👑 ADMIN
+                </span>
+              `
+
+              : `
+                <span
+                  class="badge badge-user"
+                >
+                  USER
+                </span>
+              `
+          }
+
+        </td>
+
+
+        <td>
+          ${escapeHtml(lastSeen)}
+        </td>
+
       `;
 
       tbody.appendChild(tr);
+
     });
 
-    document.getElementById("todayUsers")
-      .textContent = today;
-
-  } catch (error) {
-
-    console.error(error);
-
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="empty">
-          ❌ Gagal mengambil data.
-        </td>
-      </tr>
-    `;
   }
+
+
+  /* ==========================================
+     SEARCH
+  ========================================== */
+
+  function filterUsers() {
+
+    const keyword =
+      document
+        .getElementById(
+          "searchInput"
+        )
+        .value
+        .toLowerCase()
+        .trim();
+
+    if (!keyword) {
+
+      renderUsers(users);
+
+      return;
+
+    }
+
+    const filtered =
+      users.filter(user => {
+
+        return (
+
+          String(
+            user.name || ""
+          )
+          .toLowerCase()
+          .includes(keyword)
+
+          ||
+
+          String(
+            user.username || ""
+          )
+          .toLowerCase()
+          .includes(keyword)
+
+          ||
+
+          String(
+            user.telegramId || ""
+          )
+          .toLowerCase()
+          .includes(keyword)
+
+        );
+
+      });
+
+    renderUsers(filtered);
+
+  }
+
+
+  /* ==========================================
+     FORMAT DATE
+  ========================================== */
+
+  function formatDate(value) {
+
+    try {
+
+      return new Date(value)
+        .toLocaleString(
+          "id-ID",
+          {
+            dateStyle: "short",
+            timeStyle: "short"
+          }
+        );
+
+    } catch {
+
+      return "-";
+
+    }
+
+  }
+
+
+  /* ==========================================
+     TOGGLE PIN
+  ========================================== */
+
+  function togglePin() {
+
+    const input =
+      document.getElementById(
+        "pinInput"
+      );
+
+    input.type =
+      input.type === "password"
+        ? "text"
+        : "password";
+
+  }
+
+
+  /* ==========================================
+     LOGOUT
+  ========================================== */
+
+  function logout() {
+
+  sessionStorage.removeItem(
+    "cloupanz_admin_pin"
+  );
+
+  document
+    .getElementById("app")
+    .classList.add("hidden");
+
+  document
+    .getElementById("loginPage")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("pinInput")
+    .value = "";
+
+  document
+    .getElementById("loginError")
+    .textContent = "";
+
 }
 
-function escapeHtml(text) {
+/* =========================================
+   ESCAPE HTML
+========================================= */
 
-  return String(text)
+function escapeHtml(value) {
+
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+
 }
 
-loadUsers();
+/* =========================================
+   ENTER KEY
+========================================= */
+
+document
+  .getElementById("pinInput")
+  .addEventListener(
+    "keydown",
+    event => {
+
+      if (event.key === "Enter") {
+        login();
+      }
+
+    }
+  );
+
+checkSession();
 
 </script>
 
 </body>
-        </html>
+</html>
