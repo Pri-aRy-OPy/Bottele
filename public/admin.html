@@ -1,539 +1,598 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Cloupanz Admin</title>
-
-  <style>
-    :root {
-      --bg: #08070d;
-      --panel: #11101a;
-      --panel2: #171521;
-      --border: rgba(255,255,255,.08);
-      --text: #f7f4ff;
-      --muted: #9691a8;
-      --purple: #9b5cff;
-      --purple2: #6f35d9;
-      --green: #39d98a;
-      --red: #ff5c72;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at 20% 0%, rgba(155,92,255,.18), transparent 35%),
-        radial-gradient(circle at 100% 20%, rgba(111,53,217,.12), transparent 30%),
-        var(--bg);
-      color: var(--text);
-      font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-    }
-
-    button,
-    input {
-      font: inherit;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* ================= LOGIN ================= */
-
-    .login-page {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .login-box {
-      width: 100%;
-      max-width: 390px;
-      background: rgba(17,16,26,.88);
-      border: 1px solid var(--border);
-      border-radius: 26px;
-      padding: 30px;
-      box-shadow: 0 30px 100px rgba(0,0,0,.45);
-      backdrop-filter: blur(20px);
-    }
-
-    .logo {
-      width: 76px;
-      height: 76px;
-      margin: 0 auto 18px;
-      border-radius: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background:
-        linear-gradient(145deg, #b87cff, #692ed0);
-      box-shadow:
-        0 15px 40px rgba(139,72,255,.35);
-      font-size: 36px;
-    }
-
-    .login-title {
-      text-align: center;
-      margin: 0;
-      font-size: 26px;
-      font-weight: 800;
-    }
-
-    .login-subtitle {
-      text-align: center;
-      color: var(--muted);
-      font-size: 14px;
-      margin: 8px 0 25px;
-    }
-
-    .input-wrap {
-      position: relative;
-    }
-
-    .input {
-      width: 100%;
-      height: 54px;
-      border: 1px solid var(--border);
-      background: #0c0b12;
-      color: white;
-      outline: none;
-      border-radius: 15px;
-      padding: 0 48px 0 17px;
-    }
-
-    .input:focus {
-      border-color: rgba(155,92,255,.65);
-      box-shadow: 0 0 0 4px rgba(155,92,255,.08);
-    }
-
-    .show-pin {
-      position: absolute;
-      right: 10px;
-      top: 8px;
-      width: 38px;
-      height: 38px;
-      border: 0;
-      background: transparent;
-      color: #aaa4ba;
-      cursor: pointer;
-    }
-
-    .login-btn {
-      width: 100%;
-      height: 54px;
-      margin-top: 13px;
-      border: 0;
-      border-radius: 15px;
-      color: white;
-      font-weight: 800;
-      cursor: pointer;
-      background: linear-gradient(135deg, #a968ff, #7037d5);
-      box-shadow: 0 12px 30px rgba(124,55,220,.25);
-    }
-
-    .login-btn:active {
-      transform: scale(.98);
-    }
-
-    .login-error {
-      color: #ff7182;
-      text-align: center;
-      font-size: 13px;
-      margin-top: 13px;
-      min-height: 18px;
-    }
-
-    /* ================= APP ================= */
-
-    .app {
-      max-width: 1180px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 15px;
-      margin-bottom: 22px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 13px;
-    }
-
-    .brand-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(145deg,#b87cff,#692ed0);
-      box-shadow: 0 10px 30px rgba(139,72,255,.25);
-      font-size: 25px;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    .brand p {
-      margin: 3px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn {
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: white;
-      height: 42px;
-      padding: 0 14px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 700;
-    }
-
-    .btn:hover {
-      border-color: rgba(155,92,255,.4);
-    }
-
-    .btn-purple {
-      background: linear-gradient(135deg,#9558f5,#7036d0);
-      border: 0;
-    }
-
-    /* ================= STATS ================= */
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 13px;
-      margin-bottom: 18px;
-    }
-
-    .stat {
-      background: rgba(17,16,26,.88);
-      border: 1px solid var(--border);
-      border-radius: 19px;
-      padding: 19px;
-      min-height: 125px;
-    }
-
-    .stat-icon {
-      font-size: 22px;
-      margin-bottom: 12px;
-    }
-
-    .stat-label {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .stat-value {
-      font-size: 27px;
-      font-weight: 850;
-      margin-top: 5px;
-    }
-
-    /* ================= CONTENT ================= */
-
-    .panel {
-      background: rgba(17,16,26,.88);
-      border: 1px solid var(--border);
-      border-radius: 21px;
-      overflow: hidden;
-    }
-
-    .panel-head {
-      padding: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 15px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .panel-title {
-      margin: 0;
-      font-size: 17px;
-    }
-
-    .panel-subtitle {
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .search {
-      width: 240px;
-      height: 42px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #0c0b12;
-      color: white;
-      outline: none;
-      padding: 0 13px;
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 700px;
-    }
-
-    th,
-    td {
-      text-align: left;
-      padding: 15px 17px;
-      border-bottom: 1px solid rgba(255,255,255,.055);
-    }
-
-    th {
-      color: #898398;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-    }
-
-    td {
-      font-size: 13px;
-    }
-
-    tbody tr:hover {
-      background: rgba(255,255,255,.018);
-    }
-
-    .user {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-    }
-
-    .avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 13px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(155,92,255,.13);
-      color: #bf96ff;
-      font-weight: 800;
-    }
-
-    .user-name {
-      font-weight: 700;
-    }
-
-    .username {
-      color: var(--muted);
-      font-size: 11px;
-      margin-top: 2px;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 9px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 750;
-    }
-
-    .badge-admin {
-      background: rgba(155,92,255,.13);
-      color: #c49bff;
-    }
-
-    .badge-user {
-      background: rgba(255,255,255,.06);
-      color: #aaa4b7;
-    }
-
-    .download-count {
-      font-weight: 750;
-    }
-
-    .empty {
-      text-align: center;
-      color: var(--muted);
-      padding: 45px 20px;
-    }
-
-    .loading {
-      text-align: center;
-      color: var(--muted);
-      padding: 35px;
-    }
-
-    .error {
-      color: #ff7182;
-    }
-
-    /* ================= MOBILE ================= */
-
-    @media (max-width: 800px) {
-      .stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .topbar {
-        align-items: flex-start;
-      }
-
-      .actions .btn span {
-        display: none;
-      }
-
-      .search {
-        width: 100%;
-      }
-
-      .panel-head {
-        align-items: stretch;
-        flex-direction: column;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .app {
-        padding: 13px;
-      }
-
-      .stats {
-        gap: 9px;
-      }
-
-      .stat {
-        padding: 15px;
-        min-height: 110px;
-      }
-
-      .stat-value {
-        font-size: 23px;
-      }
-
-      .brand h1 {
-        font-size: 19px;
-      }
-
-      .brand-icon {
-        width: 44px;
-        height: 44px;
-      }
-
-      .login-box {
-        padding: 24px 19px;
-      }
-    }
-  </style>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
+
+<title>Cloupanz Admin</title>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+
+  margin: 0;
+
+  min-height: 100vh;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  color: white;
+
+  background:
+    radial-gradient(
+      circle at top,
+      #24113e,
+      #090711 55%,
+      #050509
+    );
+
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* =========================================
+   LOGIN
+========================================= */
+
+#loginPage {
+
+  min-height: 100vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+}
+
+.login-card {
+
+  width: 100%;
+
+  max-width: 460px;
+
+  padding: 42px 30px;
+
+  border-radius: 28px;
+
+  background:
+    rgba(18, 16, 28, .92);
+
+  border:
+    1px solid
+    rgba(255,255,255,.10);
+
+  box-shadow:
+    0 30px 80px
+    rgba(0,0,0,.55);
+
+  text-align: center;
+
+}
+
+.logo {
+
+  width: 110px;
+
+  height: 110px;
+
+  margin:
+    0 auto 24px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 30px;
+
+  font-size: 52px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #a855f7,
+      #6d28d9
+    );
+
+  box-shadow:
+    0 15px 45px
+    rgba(139,92,246,.35);
+
+}
+
+.login-card h1 {
+
+  margin: 0;
+
+  font-size: 34px;
+
+}
+
+.subtitle {
+
+  margin:
+    8px 0 30px;
+
+  color: #a7a3b5;
+
+  font-size: 16px;
+
+}
+
+.pin-box {
+
+  position: relative;
+
+}
+
+#pinInput {
+
+  width: 100%;
+
+  padding:
+    18px 55px 18px 20px;
+
+  border-radius: 18px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.10);
+
+  outline: none;
+
+  background: #0c0a10;
+
+  color: white;
+
+  font-size: 18px;
+
+}
+
+#pinInput:focus {
+
+  border-color: #a855f7;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(168,85,247,.15);
+
+}
+
+.eye {
+
+  position: absolute;
+
+  right: 18px;
+
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  border: 0;
+
+  background: transparent;
+
+  color: white;
+
+  font-size: 22px;
+
+  cursor: pointer;
+
+}
+
+#loginButton {
+
+  width: 100%;
+
+  margin-top: 18px;
+
+  padding: 17px;
+
+  border: 0;
+
+  border-radius: 18px;
+
+  color: white;
+
+  background:
+    linear-gradient(
+      135deg,
+      #a855f7,
+      #7c3aed
+    );
+
+  font-size: 17px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+}
+
+#loginButton:disabled {
+
+  opacity: .65;
+
+  cursor: wait;
+
+}
+
+#loginError {
+
+  min-height: 24px;
+
+  margin-top: 15px;
+
+  color: #fb7185;
+
+  font-size: 14px;
+
+}
+
+/* =========================================
+   APP
+========================================= */
+
+#app {
+
+  min-height: 100vh;
+
+  padding: 20px;
+
+}
+
+.container {
+
+  width: 100%;
+
+  max-width: 1100px;
+
+  margin: auto;
+
+}
+
+header {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-bottom: 25px;
+
+}
+
+header h1 {
+
+  margin: 0;
+
+  font-size: 27px;
+
+}
+
+.label {
+
+  margin-top: 5px;
+
+  color: #9993aa;
+
+}
+
+.actions {
+
+  display: flex;
+
+  gap: 10px;
+
+}
+
+button {
+
+  cursor: pointer;
+
+}
+
+.refresh,
+.logout {
+
+  border: 0;
+
+  padding: 12px 16px;
+
+  border-radius: 12px;
+
+  color: white;
+
+  font-weight: bold;
+
+}
+
+.refresh {
+
+  background: #7c3aed;
+
+}
+
+.logout {
+
+  background: #3f3f46;
+
+}
+
+/* =========================================
+   STATS
+========================================= */
+
+.stats {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3,1fr);
+
+  gap: 15px;
+
+  margin-bottom: 20px;
+
+}
+
+.card {
+
+  padding: 22px;
+
+  border-radius: 18px;
+
+  background:
+    rgba(24,21,35,.9);
+
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+
+}
+
+.card-label {
+
+  color: #9f9aac;
+
+  font-size: 14px;
+
+}
+
+.number {
+
+  margin-top: 8px;
+
+  font-size: 30px;
+
+  font-weight: bold;
+
+}
+
+/* =========================================
+   TABLE
+========================================= */
+
+.table-box {
+
+  overflow-x: auto;
+
+  border-radius: 18px;
+
+  background:
+    rgba(24,21,35,.9);
+
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+
+}
+
+table {
+
+  width: 100%;
+
+  border-collapse:
+    collapse;
+
+  min-width: 650px;
+
+}
+
+th,
+td {
+
+  padding: 15px;
+
+  text-align: left;
+
+  border-bottom:
+    1px solid
+    rgba(255,255,255,.07);
+
+}
+
+th {
+
+  color: #9f9aac;
+
+  font-size: 13px;
+
+}
+
+.empty {
+
+  padding: 40px;
+
+  text-align: center;
+
+  color: #8d8799;
+
+}
+
+.status {
+
+  display: inline-block;
+
+  padding:
+    6px 10px;
+
+  border-radius: 20px;
+
+  background: #14532d;
+
+  color: #86efac;
+
+  font-size: 12px;
+
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media(max-width:700px) {
+
+  .stats {
+
+    grid-template-columns: 1fr;
+
+  }
+
+  header {
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+  }
+
+  .actions {
+
+    width: 100%;
+
+  }
+
+  .refresh,
+  .logout {
+
+    flex: 1;
+
+  }
+
+  .login-card {
+
+    padding: 35px 20px;
+
+  }
+
+}
+
+</style>
+
 </head>
 
 <body>
 
-<!-- ================= LOGIN ================= -->
+<!-- ========================================
+     LOGIN
+======================================== -->
 
-<section id="loginPage" class="login-page">
+<section id="loginPage">
 
-  <div class="login-box">
+  <div class="login-card">
 
-    <div class="logo">☁️</div>
+    <div class="logo">
+      ☁️
+    </div>
 
-    <h1 class="login-title">
+    <h1>
       Cloupanz
     </h1>
 
-    <div class="login-subtitle">
+    <div class="subtitle">
       Admin Control Panel
     </div>
 
-    <div class="input-wrap">
+    <div class="pin-box">
 
       <input
         id="pinInput"
-        class="input"
         type="password"
         placeholder="Masukkan PIN admin"
         autocomplete="off"
       >
 
       <button
-        class="show-pin"
+        class="eye"
         type="button"
         onclick="togglePin()"
       >
-        👁
+        👁️
       </button>
 
     </div>
 
     <button
-      class="login-btn"
-      onclick="login()"
       id="loginButton"
+      type="button"
+      onclick="login()"
     >
-      Masuk ke Panel
+      Masuk
     </button>
 
-    <div
-      id="loginError"
-      class="login-error"
-    ></div>
+    <div id="loginError"></div>
 
   </div>
 
 </section>
 
 
-<!-- ================= ADMIN APP ================= -->
+<!-- ========================================
+     APP
+======================================== -->
 
 <section
   id="app"
-  class="app hidden"
+  class="hidden"
 >
 
-  <header class="topbar">
+<div class="container">
 
-    <div class="brand">
+  <header>
 
-      <div class="brand-icon">
-        ☁️
-      </div>
+    <div>
 
-      <div>
-        <h1>Cloupanz</h1>
-        <p>Admin Control Panel</p>
+      <h1>
+        🤖 Cloupanz Dashboard
+      </h1>
+
+      <div class="label">
+        Telegram Downloader
       </div>
 
     </div>
@@ -541,17 +600,17 @@
     <div class="actions">
 
       <button
-        class="btn"
-        onclick="loadData()"
+        class="refresh"
+        onclick="loadUsers()"
       >
-        🔄 <span>Refresh</span>
+        🔄 Refresh
       </button>
 
       <button
-        class="btn"
+        class="logout"
         onclick="logout()"
       >
-        🚪 <span>Keluar</span>
+        Keluar
       </button>
 
     </div>
@@ -559,23 +618,17 @@
   </header>
 
 
-  <!-- ================= STATS ================= -->
-
   <div class="stats">
 
-    <div class="stat">
+    <div class="card">
 
-      <div class="stat-icon">
-        👥
-      </div>
-
-      <div class="stat-label">
-        TOTAL USER
+      <div class="card-label">
+        Total User
       </div>
 
       <div
+        class="number"
         id="totalUsers"
-        class="stat-value"
       >
         0
       </div>
@@ -583,19 +636,15 @@
     </div>
 
 
-    <div class="stat">
+    <div class="card">
 
-      <div class="stat-icon">
-        🟢
-      </div>
-
-      <div class="stat-label">
-        AKTIF HARI INI
+      <div class="card-label">
+        Aktif Hari Ini
       </div>
 
       <div
+        class="number"
         id="todayUsers"
-        class="stat-value"
       >
         0
       </div>
@@ -603,41 +652,18 @@
     </div>
 
 
-    <div class="stat">
+    <div class="card">
 
-      <div class="stat-icon">
-        📥
+      <div class="card-label">
+        Status
       </div>
 
-      <div class="stat-label">
-        TOTAL DOWNLOAD
-      </div>
+      <div class="number">
 
-      <div
-        id="totalDownloads"
-        class="stat-value"
-      >
-        0
-      </div>
+        <span class="status">
+          ONLINE
+        </span>
 
-    </div>
-
-
-    <div class="stat">
-
-      <div class="stat-icon">
-        👑
-      </div>
-
-      <div class="stat-label">
-        ADMIN
-      </div>
-
-      <div
-        id="adminStatus"
-        class="stat-value"
-      >
-        -
       </div>
 
     </div>
@@ -645,210 +671,353 @@
   </div>
 
 
-  <!-- ================= USERS ================= -->
+  <div class="table-box">
 
-  <div class="panel">
+    <table>
 
-    <div class="panel-head">
+      <thead>
 
-      <div>
-        <h2 class="panel-title">
-          Pengguna Bot
-        </h2>
+        <tr>
 
-        <p class="panel-subtitle">
-          Daftar pengguna yang tersimpan di Firestore
-        </p>
-      </div>
+          <th>
+            User
+          </th>
 
-      <input
-        id="searchInput"
-        class="search"
-        type="search"
-        placeholder="🔎 Cari user..."
-        oninput="filterUsers()"
-      >
+          <th>
+            Telegram ID
+          </th>
 
-    </div>
+          <th>
+            Nama
+          </th>
 
+          <th>
+            Terakhir Aktif
+          </th>
 
-    <div class="table-wrap">
+        </tr>
 
-      <table>
+      </thead>
 
-        <thead>
+      <tbody id="users">
 
-          <tr>
-            <th>User</th>
-            <th>Telegram ID</th>
-            <th>Download</th>
-            <th>Status</th>
-            <th>Terakhir Aktif</th>
-          </tr>
+        <tr>
 
-        </thead>
+          <td
+            colspan="4"
+            class="empty"
+          >
+            Memuat data...
+          </td>
 
-        <tbody id="usersTable">
+        </tr>
 
-          <tr>
-            <td
-              colspan="5"
-              class="loading"
-            >
-              Memuat data...
-            </td>
-          </tr>
+      </tbody>
 
-        </tbody>
-
-      </table>
-
-    </div>
+    </table>
 
   </div>
+
+</div>
 
 </section>
 
 
 <script>
 
-  let users = [];
+/* =========================================
+   SESSION
+========================================= */
 
-  /* ==========================================
-     LOGIN
-  ========================================== */
+const SESSION_KEY =
+  "cloupanz_admin_token";
 
-  async function login() {
 
-    const pin =
-      document
-        .getElementById("pinInput")
-        .value
-        .trim();
+/* =========================================
+   LOGIN
+========================================= */
 
-    const error =
-      document.getElementById("loginError");
+async function login() {
 
-    const button =
-      document.getElementById("loginButton");
+  const input =
+    document.getElementById(
+      "pinInput"
+    );
 
-    error.textContent = "";
+  const button =
+    document.getElementById(
+      "loginButton"
+    );
 
-    if (!pin) {
+  const error =
+    document.getElementById(
+      "loginError"
+    );
 
-      error.textContent =
-        "Masukkan PIN admin.";
+  const pin =
+    input.value.trim();
 
-      return;
-    }
+  error.textContent = "";
 
-    button.disabled = true;
-    button.textContent = "Memeriksa...";
+  if (!pin) {
+
+    error.textContent =
+      "Masukkan PIN terlebih dahulu.";
+
+    return;
+  }
+
+  button.disabled = true;
+
+  button.textContent =
+    "Memeriksa...";
+
+  try {
+
+    const controller =
+      new AbortController();
+
+    const timeout =
+      setTimeout(
+        () => controller.abort(),
+        10000
+      );
+
+    const response =
+      await fetch(
+        "/api/admin",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              pin
+            }),
+
+          signal:
+            controller.signal
+        }
+      );
+
+    clearTimeout(timeout);
+
+    let data;
 
     try {
 
-      const response =
-        await fetch(
-          "/api/admin?action=login",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-              "x-admin-pin": pin
-            }
-          }
-        );
-
-      const data =
+      data =
         await response.json();
 
-      if (!response.ok || !data.ok) {
+    } catch {
 
-        throw new Error(
-          data.message ||
-          "PIN salah."
-        );
-
-      }
-
-      /*
-       * Simpan hanya selama tab/browser
-       * masih aktif.
-       */
-      sessionStorage.setItem(
-        "cloupanz_admin_pin",
-        pin
+      throw new Error(
+        "Server memberikan respons tidak valid."
       );
+    }
 
-      showApp();
+    if (!response.ok || !data.ok) {
 
-    } catch (err) {
+      throw new Error(
+        data.message ||
+        "PIN salah."
+      );
+    }
+
+    sessionStorage.setItem(
+      SESSION_KEY,
+      data.token
+    );
+
+    input.value = "";
+
+    showApp();
+
+    await loadUsers();
+
+  } catch (err) {
+
+    console.error(err);
+
+    if (
+      err.name ===
+      "AbortError"
+    ) {
 
       error.textContent =
-        "❌ " +
-        (err.message ||
-          "Gagal masuk.");
+        "Server terlalu lama merespons.";
 
-    } finally {
+    } else {
 
-      button.disabled = false;
-      button.textContent =
-        "Masuk ke Panel";
+      error.textContent =
+        err.message ||
+        "Gagal login.";
 
     }
 
+  } finally {
+
+    button.disabled = false;
+
+    button.textContent =
+      "Masuk";
+
   }
 
+}
 
-  /* ==========================================
-     CHECK SESSION
-  ========================================== */
 
-  function checkSession() {
+/* =========================================
+   SESSION CHECK
+========================================= */
 
-    const pin =
-      sessionStorage.getItem(
-        "cloupanz_admin_pin"
+async function checkSession() {
+
+  const token =
+    sessionStorage.getItem(
+      SESSION_KEY
+    );
+
+  if (!token) {
+
+    showLogin();
+
+    return;
+
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/admin",
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
+        }
       );
 
-    if (pin) {
+    if (!response.ok) {
 
-      showApp();
+      throw new Error(
+        "Session expired."
+      );
 
     }
 
-  }
+    showApp();
 
+    await loadUsers();
 
-  function showApp() {
+  } catch {
 
-    document
-      .getElementById("loginPage")
-      .classList.add("hidden");
+    sessionStorage.removeItem(
+      SESSION_KEY
+    );
 
-    document
-      .getElementById("app")
-      .classList.remove("hidden");
-
-    loadData();
+    showLogin();
 
   }
 
+}
 
-  /* ==========================================
-     LOAD DATA
-  ========================================== */
 
-  async function loadData() {
+/* =========================================
+   SHOW LOGIN
+========================================= */
 
-    const pin =
-      sessionStorage.getItem(
-        "cloupanz_admin_pin"
+function showLogin() {
+
+  document
+    .getElementById("app")
+    .classList.add("hidden");
+
+  document
+    .getElementById("loginPage")
+    .classList.remove("hidden");
+
+}
+
+
+/* =========================================
+   SHOW APP
+========================================= */
+
+function showApp() {
+
+  document
+    .getElementById("loginPage")
+    .classList.add("hidden");
+
+  document
+    .getElementById("app")
+    .classList.remove("hidden");
+
+}
+
+
+/* =========================================
+   LOAD USERS
+========================================= */
+
+async function loadUsers() {
+
+  const tbody =
+    document.getElementById(
+      "users"
+    );
+
+  const token =
+    sessionStorage.getItem(
+      SESSION_KEY
+    );
+
+  if (!token) {
+
+    showLogin();
+
+    return;
+
+  }
+
+  tbody.innerHTML = `
+    <tr>
+      <td
+        colspan="4"
+        class="empty"
+      >
+        Memuat data...
+      </td>
+    </tr>
+  `;
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/admin",
+        {
+          method: "GET",
+
+          headers: {
+            Authorization:
+              `Bearer ${token}`
+          }
+        }
       );
 
-    if (!pin) {
+    const data =
+      await response.json();
+
+    if (
+      response.status === 401
+    ) {
 
       logout();
 
@@ -856,126 +1025,41 @@
 
     }
 
-    const tbody =
-      document.getElementById(
-        "usersTable"
+    if (
+      !response.ok ||
+      !data.ok
+    ) {
+
+      throw new Error(
+        data.message ||
+        "Gagal mengambil data."
       );
-
-    tbody.innerHTML = `
-      <tr>
-        <td
-          colspan="5"
-          class="loading"
-        >
-          Memuat data...
-        </td>
-      </tr>
-    `;
-
-    try {
-
-      const response =
-        await fetch(
-          "/api/admin?action=users",
-          {
-            headers: {
-              "x-admin-pin": pin
-            }
-          }
-        );
-
-      const data =
-        await response.json();
-
-      if (
-        response.status === 401
-      ) {
-
-        logout();
-
-        return;
-
-      }
-
-      if (
-        !response.ok ||
-        !data.ok
-      ) {
-
-        throw new Error(
-          data.message ||
-          "Gagal mengambil data."
-        );
-
-      }
-
-      users =
-        data.users || [];
-
-      document
-        .getElementById("totalUsers")
-        .textContent =
-          data.stats.totalUsers;
-
-      document
-        .getElementById("todayUsers")
-        .textContent =
-          data.stats.todayUsers;
-
-      document
-        .getElementById("totalDownloads")
-        .textContent =
-          data.stats.totalDownloads;
-
-      document
-        .getElementById("adminStatus")
-        .textContent =
-          data.stats.adminExists
-            ? "AKTIF"
-            : "BELUM";
-
-      renderUsers(users);
-
-    } catch (err) {
-
-      tbody.innerHTML = `
-        <tr>
-          <td
-            colspan="5"
-            class="empty error"
-          >
-            ❌ ${escapeHtml(
-              err.message ||
-              "Gagal mengambil data."
-            )}
-          </td>
-        </tr>
-      `;
 
     }
 
-  }
+    const documents =
+      data.users || [];
 
+    document
+      .getElementById(
+        "totalUsers"
+      )
+      .textContent =
+        documents.length;
 
-  /* ==========================================
-     RENDER USERS
-  ========================================== */
+    const now =
+      new Date();
 
-  function renderUsers(list) {
-
-    const tbody =
-      document.getElementById(
-        "usersTable"
-      );
+    let today = 0;
 
     tbody.innerHTML = "";
 
-    if (!list.length) {
+    if (!documents.length) {
 
       tbody.innerHTML = `
         <tr>
           <td
-            colspan="5"
+            colspan="4"
             class="empty"
           >
             Belum ada user.
@@ -983,231 +1067,142 @@
         </tr>
       `;
 
-      return;
-
-    }
-
-    list.forEach(user => {
-
-      const tr =
-        document.createElement("tr");
-
-      const name =
-        user.name || "Tanpa Nama";
-
-      const username =
-        user.username
-          ? "@" + user.username
-          : "Tidak ada username";
-
-      const initial =
-        name
-          .charAt(0)
-          .toUpperCase();
-
-      const admin =
-        user.isAdmin === true;
-
-      const lastSeen =
-        user.lastSeen
-          ? formatDate(user.lastSeen)
-          : "-";
-
-      tr.innerHTML = `
-
-        <td>
-
-          <div class="user">
-
-            <div class="avatar">
-              ${escapeHtml(initial)}
-            </div>
-
-            <div>
-
-              <div class="user-name">
-                ${escapeHtml(name)}
-              </div>
-
-              <div class="username">
-                ${escapeHtml(username)}
-              </div>
-
-            </div>
-
-          </div>
-
-        </td>
-
-
-        <td>
-          ${escapeHtml(
-            user.telegramId || "-"
-          )}
-        </td>
-
-
-        <td>
-
-          <span class="download-count">
-            ${Number(
-              user.downloads || 0
-            )}
-          </span>
-
-        </td>
-
-
-        <td>
-
-          ${
-            admin
-
-              ? `
-                <span
-                  class="badge badge-admin"
-                >
-                  👑 ADMIN
-                </span>
-              `
-
-              : `
-                <span
-                  class="badge badge-user"
-                >
-                  USER
-                </span>
-              `
-          }
-
-        </td>
-
-
-        <td>
-          ${escapeHtml(lastSeen)}
-        </td>
-
-      `;
-
-      tbody.appendChild(tr);
-
-    });
-
-  }
-
-
-  /* ==========================================
-     SEARCH
-  ========================================== */
-
-  function filterUsers() {
-
-    const keyword =
       document
         .getElementById(
-          "searchInput"
+          "todayUsers"
         )
-        .value
-        .toLowerCase()
-        .trim();
-
-    if (!keyword) {
-
-      renderUsers(users);
+        .textContent = "0";
 
       return;
 
     }
 
-    const filtered =
-      users.filter(user => {
+    documents.forEach(
+      doc => {
 
-        return (
+        const f =
+          doc.fields || {};
 
-          String(
-            user.name || ""
-          )
-          .toLowerCase()
-          .includes(keyword)
+        const username =
+          f.username?.stringValue ||
+          "-";
 
-          ||
+        const id =
+          f.telegram_id?.stringValue ||
+          "-";
 
-          String(
-            user.username || ""
-          )
-          .toLowerCase()
-          .includes(keyword)
+        const first =
+          f.first_name?.stringValue ||
+          "";
 
-          ||
+        const last =
+          f.last_name?.stringValue ||
+          "";
 
-          String(
-            user.telegramId || ""
-          )
-          .toLowerCase()
-          .includes(keyword)
+        const name =
+          `${first} ${last}`
+            .trim() || "-";
 
-        );
+        const timestamp =
+          f.last_seen?.timestampValue ||
+          "";
 
-      });
+        const date =
+          timestamp
+            ? new Date(timestamp)
+            : null;
 
-    renderUsers(filtered);
+        if (
+          date &&
+          date.toDateString() ===
+          now.toDateString()
+        ) {
+
+          today++;
+
+        }
+
+        const tr =
+          document.createElement(
+            "tr"
+          );
+
+        tr.innerHTML = `
+
+          <td>
+            @${escapeHtml(username)}
+          </td>
+
+          <td>
+            ${escapeHtml(id)}
+          </td>
+
+          <td>
+            ${escapeHtml(name)}
+          </td>
+
+          <td>
+            ${
+              date
+                ? date.toLocaleString(
+                    "id-ID"
+                  )
+                : "-"
+            }
+          </td>
+
+        `;
+
+        tbody.appendChild(tr);
+
+      }
+    );
+
+    document
+      .getElementById(
+        "todayUsers"
+      )
+      .textContent =
+        today;
+
+  } catch (error) {
+
+    console.error(error);
+
+    tbody.innerHTML = `
+
+      <tr>
+
+        <td
+          colspan="4"
+          class="empty"
+        >
+
+          ❌
+          ${escapeHtml(
+            error.message ||
+            "Gagal mengambil data."
+          )}
+
+        </td>
+
+      </tr>
+
+    `;
 
   }
 
-
-  /* ==========================================
-     FORMAT DATE
-  ========================================== */
-
-  function formatDate(value) {
-
-    try {
-
-      return new Date(value)
-        .toLocaleString(
-          "id-ID",
-          {
-            dateStyle: "short",
-            timeStyle: "short"
-          }
-        );
-
-    } catch {
-
-      return "-";
-
-    }
-
-  }
+}
 
 
-  /* ==========================================
-     TOGGLE PIN
-  ========================================== */
+/* =========================================
+   LOGOUT
+========================================= */
 
-  function togglePin() {
-
-    const input =
-      document.getElementById(
-        "pinInput"
-      );
-
-    input.type =
-      input.type === "password"
-        ? "text"
-        : "password";
-
-  }
-
-
-  /* ==========================================
-     LOGOUT
-  ========================================== */
-
-  function logout() {
+function logout() {
 
   sessionStorage.removeItem(
-    "cloupanz_admin_pin"
+    SESSION_KEY
   );
 
   document
@@ -1222,11 +1217,27 @@
     .getElementById("pinInput")
     .value = "";
 
-  document
-    .getElementById("loginError")
-    .textContent = "";
+}
+
+
+/* =========================================
+   TOGGLE PIN
+========================================= */
+
+function togglePin() {
+
+  const input =
+    document.getElementById(
+      "pinInput"
+    );
+
+  input.type =
+    input.type === "password"
+      ? "text"
+      : "password";
 
 }
+
 
 /* =========================================
    ESCAPE HTML
@@ -1235,16 +1246,32 @@
 function escapeHtml(value) {
 
   return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 
 }
 
+
 /* =========================================
-   ENTER KEY
+   ENTER
 ========================================= */
 
 document
@@ -1253,12 +1280,21 @@ document
     "keydown",
     event => {
 
-      if (event.key === "Enter") {
+      if (
+        event.key === "Enter"
+      ) {
+
         login();
+
       }
 
     }
   );
+
+
+/* =========================================
+   START
+========================================= */
 
 checkSession();
 
