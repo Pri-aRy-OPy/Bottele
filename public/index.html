@@ -2,380 +2,311 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0b0712">
-<meta name="description" content="Cloupanz Media Downloader">
-<title>Cloupanz — Download Media</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cloupanz Downloader</title>
 <style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
-
-html{
-    scroll-behavior:smooth;
-}
-
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
 body{
-    min-height:100vh;
-    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    color:#fff;
-    background:
-        radial-gradient(circle at 50% -10%,#32115b 0%,#170b27 35%,#08070d 72%);
+margin:0;
+background:
+radial-gradient(circle at 50% -10%,#24103e 0,#0b0712 45%,#050509 100%);
+color:#fff;
+font-family:Arial,Helvetica,sans-serif;
+min-height:100vh
 }
-
-button,
-input{
-    font:inherit;
-}
-
-a{
-    color:inherit;
-    text-decoration:none;
-}
-
 .container{
-    width:min(1180px,calc(100% - 32px));
-    margin:auto;
+width:min(1100px,calc(100% - 32px));
+margin:auto
 }
-
 .navbar{
-    height:82px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom:1px solid rgba(255,255,255,.06);
+height:78px;
+display:flex;
+align-items:center;
+justify-content:space-between
 }
-
 .brand{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    font-size:25px;
-    font-weight:800;
+display:flex;
+align-items:center;
+gap:12px;
+color:#fff;
+text-decoration:none;
+font-size:24px;
+font-weight:800
 }
-
 .logo{
-    width:46px;
-    height:46px;
-    border-radius:14px;
-    display:grid;
-    place-items:center;
-    font-size:27px;
-    background:linear-gradient(145deg,#aa5cff,#7227df);
-    box-shadow:0 10px 35px rgba(140,55,255,.35);
+width:44px;
+height:44px;
+border-radius:13px;
+display:grid;
+place-items:center;
+font-size:25px;
+background:linear-gradient(135deg,#a84cff,#6d2ae6);
+box-shadow:0 0 30px #843cff55
 }
-
 .admin{
-    color:#aaa3b8;
-    font-size:16px;
-    transition:.2s;
+color:#aaa;
+text-decoration:none
 }
-
-.admin:hover{
-    color:#fff;
-}
-
 .hero{
-    text-align:center;
-    padding:85px 0 45px;
+text-align:center;
+padding:75px 0 50px
 }
-
 .badge{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 17px;
-    border:1px solid rgba(177,99,255,.25);
-    border-radius:999px;
-    background:rgba(123,43,208,.12);
-    color:#d2b4ff;
-    box-shadow:0 0 30px rgba(136,55,255,.08);
+display:inline-flex;
+align-items:center;
+gap:9px;
+padding:11px 18px;
+border-radius:30px;
+background:#1d1030;
+border:1px solid #6730a0;
+color:#d6b9ff;
+font-size:15px
 }
-
 .dot{
-    width:10px;
-    height:10px;
-    border-radius:50%;
-    background:#46e98b;
-    box-shadow:0 0 12px #46e98b;
+width:10px;
+height:10px;
+border-radius:50%;
+background:#45e889;
+box-shadow:0 0 14px #45e889
 }
-
 .hero h1{
-    margin:28px auto 18px;
-    max-width:850px;
-    font-size:clamp(44px,7vw,76px);
-    line-height:1.02;
-    letter-spacing:-3px;
+font-size:clamp(45px,8vw,78px);
+line-height:1;
+letter-spacing:-4px;
+margin:35px 0 25px
 }
-
 .gradient{
-    background:linear-gradient(90deg,#fff,#b56aff,#8737f2);
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
+background:linear-gradient(90deg,#fff,#b76cff);
+-webkit-background-clip:text;
+background-clip:text;
+color:transparent
 }
-
 .hero p{
-    max-width:700px;
-    margin:auto;
-    color:#aaa5b3;
-    font-size:19px;
-    line-height:1.7;
+max-width:760px;
+margin:0 auto 40px;
+font-size:19px;
+line-height:1.7;
+color:#aaa4b4
 }
-
 .download-box{
-    width:min(850px,100%);
-    margin:40px auto 0;
-    padding:12px;
-    border:1px solid rgba(255,255,255,.09);
-    border-radius:25px;
-    background:rgba(17,14,24,.86);
-    box-shadow:0 25px 70px rgba(0,0,0,.3);
+padding:12px;
+border-radius:27px;
+background:#0e0b14;
+border:1px solid #2b2335;
+box-shadow:0 20px 70px #0008
 }
-
 .form{
-    display:flex;
-    gap:10px;
+display:flex;
+gap:10px
 }
-
 .input-wrap{
-    flex:1;
-    position:relative;
+flex:1
 }
-
 input{
-    width:100%;
-    height:62px;
-    padding:0 20px;
-    border:1px solid rgba(255,255,255,.08);
-    outline:none;
-    border-radius:17px;
-    background:#0b0910;
-    color:#fff;
-    font-size:16px;
+width:100%;
+height:58px;
+padding:0 20px;
+border:1px solid #29222f;
+outline:none;
+border-radius:18px;
+background:#08070b;
+color:#fff;
+font-size:16px
 }
-
-input::placeholder{
-    color:#68636e;
-}
-
 input:focus{
-    border-color:#9748ff;
-    box-shadow:0 0 0 3px rgba(151,72,255,.1);
+border-color:#9148ed;
+box-shadow:0 0 0 3px #9148ed22
 }
-
 .download-btn{
-    min-width:175px;
-    height:62px;
-    border:0;
-    border-radius:17px;
-    cursor:pointer;
-    color:#fff;
-    font-weight:800;
-    background:linear-gradient(135deg,#a94fff,#7028dd);
-    box-shadow:0 12px 30px rgba(126,44,230,.25);
-    transition:.2s;
+height:58px;
+padding:0 34px;
+border:0;
+border-radius:18px;
+color:#fff;
+font-size:17px;
+font-weight:800;
+cursor:pointer;
+background:linear-gradient(135deg,#a74cff,#7130e4);
+box-shadow:0 10px 35px #7e38e655
 }
-
-.download-btn:hover{
-    transform:translateY(-2px);
-    box-shadow:0 16px 35px rgba(126,44,230,.38);
-}
-
 .download-btn:disabled{
-    opacity:.6;
-    cursor:not-allowed;
-    transform:none;
+opacity:.6;
+cursor:wait
 }
-
 .platforms{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    padding:15px 5px 4px;
-    flex-wrap:wrap;
+display:flex;
+justify-content:center;
+gap:12px;
+flex-wrap:wrap;
+padding:17px 5px 4px
 }
-
 .platform{
-    color:#817b89;
-    padding:7px 13px;
-    border-radius:10px;
-    font-size:14px;
+color:#807887;
+font-size:14px
 }
-
-.result{
-    margin:24px auto 0;
-    width:min(850px,100%);
-}
-
 .status{
-    display:none;
-    padding:16px 18px;
-    border-radius:15px;
-    text-align:center;
-    line-height:1.5;
+display:none;
+margin:22px 0;
+padding:15px 18px;
+border-radius:16px;
+background:#151019;
+border:1px solid #302536;
+color:#bbb
 }
-
 .status.show{
-    display:block;
+display:block
 }
-
-.status.loading{
-    color:#d7c2ff;
-    background:rgba(123,43,208,.12);
-    border:1px solid rgba(150,74,255,.2);
-}
-
 .status.error{
-    color:#ff8d9d;
-    background:rgba(255,60,90,.07);
-    border:1px solid rgba(255,60,90,.16);
+color:#ff7e91;
+background:#261016;
+border-color:#5d2430
 }
-
+.status.success{
+color:#6ff0a0;
+background:#0d2319;
+border-color:#174a2d
+}
 .media-list{
-    display:grid;
-    gap:20px;
+display:grid;
+gap:20px;
+margin-top:22px
 }
-
 .media-card{
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:22px;
-    background:#100e16;
+overflow:hidden;
+border-radius:25px;
+background:#100e16;
+border:1px solid #27212f;
+box-shadow:0 15px 50px #0005
 }
-
 .media-preview{
-    width:100%;
-    max-height:700px;
-    display:block;
-    object-fit:contain;
-    background:#050407;
+display:block;
+width:100%;
+max-height:650px;
+object-fit:contain;
+background:#050505
 }
-
+img.media-preview{
+object-fit:cover
+}
+.audio-wrap{
+padding:35px 25px;
+background:
+linear-gradient(135deg,#25103e,#100c17)
+}
+.audio-icon{
+font-size:55px;
+margin-bottom:15px
+}
+.audio-wrap audio{
+width:100%
+}
 .media-info{
-    padding:18px;
+padding:20px
 }
-
+.media-title{
+font-size:19px;
+font-weight:800;
+margin-bottom:7px
+}
 .media-type{
-    color:#aaa2b3;
-    font-size:13px;
-    margin-bottom:12px;
+color:#a76cff;
+font-size:14px;
+margin-bottom:15px
 }
-
 .media-actions{
-    display:flex;
-    gap:10px;
+display:flex;
+gap:10px
 }
-
 .media-actions a{
-    flex:1;
-    min-height:48px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:13px;
-    background:linear-gradient(135deg,#a94fff,#7028dd);
-    font-weight:700;
+flex:1;
+height:48px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:14px;
+background:linear-gradient(135deg,#a74cff,#7130e4);
+color:#fff;
+text-decoration:none;
+font-weight:800
 }
-
 .media-actions a.secondary{
-    background:#1a1721;
-    border:1px solid rgba(255,255,255,.08);
+background:#211a2b;
+border:1px solid #392b48
 }
-
-.audio-card{
-    padding:20px;
+.gallery{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:5px;
+background:#050505
 }
-
-.audio-card audio{
-    width:100%;
+.gallery img{
+width:100%;
+aspect-ratio:1;
+object-fit:cover;
+display:block
 }
-
 .features{
-    padding:50px 0 90px;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:18px;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+padding:45px 0 80px
 }
-
 .feature{
-    min-height:210px;
-    padding:28px;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:24px;
-    background:rgba(16,14,22,.78);
+padding:28px;
+min-height:200px;
+border-radius:24px;
+background:#100e16;
+border:1px solid #27212f
 }
-
 .feature-icon{
-    font-size:38px;
-    margin-bottom:24px;
+font-size:40px;
+margin-bottom:20px
 }
-
 .feature h2{
-    font-size:22px;
-    margin-bottom:10px;
+margin:0 0 10px;
+font-size:22px
 }
-
 .feature p{
-    color:#918b98;
-    line-height:1.7;
+margin:0;
+line-height:1.7;
+color:#8e8895
 }
-
 .footer{
-    padding:30px 0;
-    border-top:1px solid rgba(255,255,255,.06);
-    color:#68636e;
-    text-align:center;
-    font-size:14px;
+padding:25px;
+border-top:1px solid #17131d;
+text-align:center;
+color:#5f5967;
+font-size:14px
 }
-
 @media(max-width:700px){
-    .navbar{
-        height:72px;
-    }
-
-    .brand{
-        font-size:21px;
-    }
-
-    .logo{
-        width:42px;
-        height:42px;
-        font-size:24px;
-    }
-
-    .hero{
-        padding:65px 0 30px;
-    }
-
-    .hero h1{
-        font-size:47px;
-        letter-spacing:-2px;
-    }
-
-    .hero p{
-        font-size:16px;
-    }
-
-    .form{
-        flex-direction:column;
-    }
-
-    .download-btn{
-        width:100%;
-    }
-
-    .features{
-        grid-template-columns:1fr;
-        padding-top:30px;
-    }
-
-    .feature{
-        min-height:auto;
-    }
+.container{
+width:min(100% - 24px,1100px)
+}
+.navbar{
+height:70px
+}
+.hero{
+padding:60px 0 35px
+}
+.hero h1{
+letter-spacing:-2px
+}
+.hero p{
+font-size:16px
+}
+.form{
+flex-direction:column
+}
+.download-btn{
+width:100%
+}
+.features{
+grid-template-columns:1fr
+}
+.gallery{
+grid-template-columns:2fr 2fr
+}
 }
 </style>
 </head>
@@ -383,341 +314,827 @@ input:focus{
 <body>
 
 <header class="navbar container">
-    <a class="brand" href="/">
-        <span class="logo">☁️</span>
-        <span>Cloupanz</span>
-    </a>
-    <a class="admin" href="/admin.html">Admin</a>
+<a href="/" class="brand">
+<span class="logo">☁️</span>
+<span>Cloupanz</span>
+</a>
+<a href="/admin.html" class="admin">Admin</a>
 </header>
 
 <main>
 
 <section class="hero container">
-    <div class="badge">
-        <span class="dot"></span>
-        Downloader Online
-    </div>
 
-    <h1>
-        Download <span class="gradient">Media</span>
-    </h1>
+<div class="badge">
+<span class="dot"></span>
+Downloader Online
+</div>
 
-    <p>
-        Tempel link video, foto, audio, atau carousel.
-        Cloupanz akan mencoba mengambil semua media yang tersedia.
-    </p>
+<h1>
+Download <span class="gradient">Media</span>
+</h1>
 
-    <div class="download-box">
-        <form class="form" id="downloadForm">
-            <div class="input-wrap">
-                <input
-                    id="urlInput"
-                    type="url"
-                    autocomplete="off"
-                    placeholder="Tempel link Instagram, TikTok, YouTube..."
-                    required
-                >
-            </div>
+<p>
+Tempel link Instagram atau TikTok.
+Video, foto, carousel, dan audio akan ditampilkan sesuai media yang tersedia.
+</p>
 
-            <button class="download-btn" id="downloadBtn" type="submit">
-                Download
-            </button>
-        </form>
+<div class="download-box">
 
-        <div class="platforms">
-            <span class="platform">Instagram</span>
-            <span class="platform">TikTok</span>
-            <span class="platform">YouTube</span>
-            <span class="platform">Facebook</span>
-        </div>
-    </div>
+<form id="downloadForm" class="form">
 
-    <div class="result">
-        <div class="status" id="status"></div>
-        <div class="media-list" id="mediaList"></div>
-    </div>
+<div class="input-wrap">
+<input
+id="urlInput"
+type="url"
+placeholder="Tempel link Instagram atau TikTok..."
+autocomplete="off"
+required
+>
+</div>
+
+<button
+id="downloadBtn"
+class="download-btn"
+type="submit"
+>
+Download
+</button>
+
+</form>
+
+<div class="platforms">
+<span class="platform">Instagram</span>
+<span class="platform">TikTok</span>
+<span class="platform">Foto</span>
+<span class="platform">Video</span>
+<span class="platform">Audio</span>
+</div>
+
+</div>
+
+<div id="status" class="status"></div>
+
+<div id="mediaList" class="media-list"></div>
+
 </section>
 
 <section class="features container">
 
-    <div class="feature">
-        <div class="feature-icon">⚡</div>
-        <h2>Cepat</h2>
-        <p>
-            Proses link melalui backend downloader dan tampilkan hasil media secara langsung.
-        </p>
-    </div>
+<div class="feature">
+<div class="feature-icon">⚡</div>
+<h2>Cepat</h2>
+<p>
+Proses link melalui backend Cloupanz dan tampilkan hasil media secara langsung.
+</p>
+</div>
 
-    <div class="feature">
-        <div class="feature-icon">🎬</div>
-        <h2>Video</h2>
-        <p>
-            Video hasil downloader dapat dipreview langsung sebelum disimpan.
-        </p>
-    </div>
+<div class="feature">
+<div class="feature-icon">🎬</div>
+<h2>Video + Audio</h2>
+<p>
+Video tetap ditampilkan sebagai video dan audio juga ditampilkan jika tersedia.
+</p>
+</div>
 
-    <div class="feature">
-        <div class="feature-icon">🖼️</div>
-        <h2>Foto & Carousel</h2>
-        <p>
-            Jika sebuah postingan mempunyai beberapa foto, seluruh media akan ditampilkan.
-        </p>
-    </div>
+<div class="feature">
+<div class="feature-icon">🖼️</div>
+<h2>Foto & Carousel</h2>
+<p>
+Semua foto dari carousel ditampilkan sehingga tidak hanya mendapatkan satu gambar.
+</p>
+</div>
 
 </section>
 
 </main>
 
 <footer class="footer">
-    © 2026 Cloupanz
+© 2026 Cloupanz
 </footer>
 
 <script>
-const form = document.getElementById("downloadForm");
-const input = document.getElementById("urlInput");
-const button = document.getElementById("downloadBtn");
-const statusBox = document.getElementById("status");
-const mediaList = document.getElementById("mediaList");
+const form =
+document.getElementById("downloadForm");
 
-function setStatus(message,type="loading"){
-    statusBox.className = `status show ${type}`;
-    statusBox.textContent = message;
+const input =
+document.getElementById("urlInput");
+
+const button =
+document.getElementById("downloadBtn");
+
+const statusBox =
+document.getElementById("status");
+
+const mediaList =
+document.getElementById("mediaList");
+
+function setStatus(
+message,
+type="loading"
+){
+statusBox.className =
+"status show " + type;
+
+statusBox.textContent =
+message;
 }
 
 function clearResult(){
-    statusBox.className = "status";
-    statusBox.textContent = "";
-    mediaList.innerHTML = "";
+statusBox.className =
+"status";
+
+statusBox.textContent =
+"";
+
+mediaList.innerHTML =
+"";
+}
+
+function safeUrl(value){
+try{
+const url =
+new URL(String(value));
+
+if(
+url.protocol !== "http:" &&
+url.protocol !== "https:"
+){
+return "";
+}
+
+return url.href;
+}catch{
+return "";
+}
+}
+
+function escapeHtml(value){
+return String(value ?? "")
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;")
+.replace(/'/g,"&#039;");
+}
+
+function addItem(
+items,
+url,
+type,
+thumbnail=""
+){
+url =
+safeUrl(url);
+
+if(!url){
+return;
+}
+
+if(
+items.some(
+item =>
+item.url === url
+)
+){
+return;
+}
+
+items.push({
+url,
+type,
+thumbnail
+});
+}
+
+function detectUrlType(url){
+const clean =
+String(url)
+.toLowerCase()
+.split("?")[0];
+
+if(
+/\.(jpg|jpeg|png|gif|webp|avif)$/i
+.test(clean)
+){
+return "image";
+}
+
+if(
+/\.(mp3|m4a|aac|ogg|wav|flac)$/i
+.test(clean)
+){
+return "audio";
+}
+
+if(
+/\.(mp4|webm|mov|m4v|mkv)$/i
+.test(clean)
+){
+return "video";
+}
+
+return "";
 }
 
 function normalizeMedia(data){
-    let items = [];
 
-    if(Array.isArray(data)){
-        items = data;
-    }else if(Array.isArray(data.media)){
-        items = data.media;
-    }else if(Array.isArray(data.results)){
-        items = data.results;
-    }else if(Array.isArray(data.items)){
-        items = data.items;
-    }else if(data.url || data.download || data.mediaUrl){
-        items = [data];
-    }
+const items = [];
 
-    return items.map(item=>{
-        if(typeof item === "string"){
-            return {
-                url:item,
-                type:detectType(item)
-            };
-        }
-
-        return {
-            url:item.url || item.download || item.mediaUrl || item.src || item.link,
-            type:(item.type || item.mime || detectType(item.url || item.download || item.mediaUrl || "")).toLowerCase(),
-            thumbnail:item.thumbnail || item.thumb || item.preview || null,
-            filename:item.filename || item.fileName || item.name || null
-        };
-    }).filter(item=>item.url);
+if(
+Array.isArray(data.media)
+){
+for(
+const item of data.media
+){
+if(
+typeof item === "string"
+){
+addItem(
+items,
+item,
+detectUrlType(item)
+);
+continue;
 }
 
-function detectType(url){
-    const value=String(url).toLowerCase().split("?")[0];
-
-    if(/\.(jpg|jpeg|png|gif|webp|avif)$/i.test(value)){
-        return "image";
-    }
-
-    if(/\.(mp3|m4a|aac|ogg|wav|flac)$/i.test(value)){
-        return "audio";
-    }
-
-    if(/\.(mp4|webm|mov|mkv|m4v)$/i.test(value)){
-        return "video";
-    }
-
-    return "video";
+if(!item){
+continue;
 }
 
-function isImage(type,url){
-    return type.includes("image") || /\.(jpg|jpeg|png|gif|webp|avif)(\?|$)/i.test(url);
+const url =
+item.url ||
+item.src ||
+item.mediaUrl ||
+item.downloadUrl ||
+item.download_url;
+
+const type =
+String(
+item.type ||
+item.mime ||
+detectUrlType(url)
+).toLowerCase();
+
+addItem(
+items,
+url,
+type.includes("image")
+? "image"
+: type.includes("audio")
+? "audio"
+: "video",
+item.thumbnail ||
+item.thumb ||
+""
+);
+}
 }
 
-function isAudio(type,url){
-    return type.includes("audio") || /\.(mp3|m4a|aac|ogg|wav|flac)(\?|$)/i.test(url);
+if(
+Array.isArray(data.video_urls)
+){
+for(
+const url of data.video_urls
+){
+addItem(
+items,
+url,
+"video",
+data.thumbnail
+);
+}
 }
 
-function isVideo(type,url){
-    return type.includes("video") || /\.(mp4|webm|mov|mkv|m4v)(\?|$)/i.test(url);
+if(data.video_url){
+addItem(
+items,
+data.video_url,
+"video",
+data.thumbnail
+);
 }
 
-function renderMedia(items){
-    mediaList.innerHTML="";
-
-    if(!items.length){
-        setStatus("❌ Backend tidak mengembalikan media yang bisa diunduh.","error");
-        return;
-    }
-
-    statusBox.className="status";
-    statusBox.textContent="";
-
-    items.forEach((item,index)=>{
-        const url=item.url;
-        const card=document.createElement("div");
-        card.className="media-card";
-
-        let preview="";
-
-        if(isImage(item.type,url)){
-            preview=`
-                <img
-                    class="media-preview"
-                    src="${escapeAttr(url)}"
-                    alt="Media ${index+1}"
-                    loading="lazy"
-                >
-            `;
-        }else if(isVideo(item.type,url)){
-            preview=`
-                <video
-                    class="media-preview"
-                    controls
-                    playsinline
-                    preload="metadata"
-                    ${item.thumbnail ? `poster="${escapeAttr(item.thumbnail)}"` : ""}
-                >
-                    <source src="${escapeAttr(url)}">
-                </video>
-            `;
-        }else if(isAudio(item.type,url)){
-            preview=`
-                <div class="audio-card">
-                    <audio controls preload="metadata">
-                        <source src="${escapeAttr(url)}">
-                    </audio>
-                </div>
-            `;
-        }else{
-            preview=`
-                <div class="audio-card">
-                    <p>Media ${index+1}</p>
-                </div>
-            `;
-        }
-
-        const filename=item.filename || `cloupanz-media-${index+1}`;
-
-        card.innerHTML=`
-            ${preview}
-            <div class="media-info">
-                <div class="media-type">
-                    ${isImage(item.type,url) ? "🖼️ Foto" :
-                      isVideo(item.type,url) ? "🎬 Video" :
-                      isAudio(item.type,url) ? "🎵 Audio" : "📦 Media"}
-                </div>
-
-                <div class="media-actions">
-                    <a href="${escapeAttr(url)}" target="_blank" rel="noopener">
-                        Buka
-                    </a>
-                    <a
-                        class="secondary"
-                        href="${escapeAttr(url)}"
-                        download="${escapeAttr(filename)}"
-                        target="_blank"
-                        rel="noopener"
-                    >
-                        Download
-                    </a>
-                </div>
-            </div>
-        `;
-
-        mediaList.appendChild(card);
-    });
-
-    if(items.length > 1){
-        const info=document.createElement("div");
-        info.className="status show loading";
-        info.textContent=`✅ ${items.length} media berhasil ditemukan.`;
-        mediaList.prepend(info);
-    }
+if(
+Array.isArray(data.images)
+){
+for(
+const url of data.images
+){
+addItem(
+items,
+url,
+"image"
+);
+}
 }
 
-function escapeAttr(value){
-    return String(value ?? "")
-        .replace(/&/g,"&amp;")
-        .replace(/"/g,"&quot;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;");
+if(
+Array.isArray(data.audio_urls)
+){
+for(
+const url of data.audio_urls
+){
+addItem(
+items,
+url,
+"audio"
+);
+}
 }
 
-form.addEventListener("submit",async event=>{
-    event.preventDefault();
+if(data.audio_url){
+addItem(
+items,
+data.audio_url,
+"audio"
+);
+}
 
-    const url=input.value.trim();
+if(
+Array.isArray(data.results)
+){
+for(
+const item of data.results
+){
+if(
+typeof item === "string"
+){
+addItem(
+items,
+item,
+detectUrlType(item)
+);
+}else{
+const url =
+item.url ||
+item.download ||
+item.mediaUrl ||
+item.src ||
+item.link;
 
-    if(!url){
-        setStatus("❌ Link wajib diisi.","error");
-        return;
-    }
+const type =
+String(
+item.type ||
+item.mime ||
+detectUrlType(url)
+).toLowerCase();
 
-    clearResult();
-    button.disabled=true;
-    button.textContent="Mengambil...";
+addItem(
+items,
+url,
+type.includes("image")
+? "image"
+: type.includes("audio")
+? "audio"
+: "video",
+item.thumbnail
+);
+}
+}
+}
 
-    setStatus("⏳ Mengambil semua media...");
+return items;
+}
 
-    try{
-        const response=await fetch("/api/download",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json",
-                "Accept":"application/json"
-            },
-            body:JSON.stringify({url})
-        });
+function renderVideo(
+item,
+index
+){
+const card =
+document.createElement("div");
 
-        const text=await response.text();
+card.className =
+"media-card";
 
-        let data;
+card.innerHTML = `
+<video
+class="media-preview"
+controls
+playsinline
+preload="metadata"
+${item.thumbnail
+? `poster="${escapeHtml(item.thumbnail)}"`
+: ""}
+>
+<source src="${escapeHtml(item.url)}">
+</video>
 
-        try{
-            data=JSON.parse(text);
-        }catch{
-            throw new Error("Server mengirim response yang bukan JSON.");
-        }
+<div class="media-info">
+<div class="media-title">
+🎬 Video ${index + 1}
+</div>
 
-        if(!response.ok){
-            throw new Error(
-                data.error ||
-                data.message ||
-                `Server error ${response.status}`
-            );
-        }
+<div class="media-type">
+Video
+</div>
 
-        if(data.success===false){
-            throw new Error(
-                data.error ||
-                data.message ||
-                "Media tidak berhasil diambil."
-            );
-        }
+<div class="media-actions">
+<a
+href="${escapeHtml(item.url)}"
+target="_blank"
+rel="noopener"
+>
+Buka
+</a>
 
-        const items=normalizeMedia(data);
+<a
+class="secondary"
+href="${escapeHtml(item.url)}"
+download
+target="_blank"
+rel="noopener"
+>
+Download
+</a>
+</div>
+</div>
+`;
 
-        renderMedia(items);
+mediaList.appendChild(card);
+}
 
-    }catch(error){
-        mediaList.innerHTML="";
-        setStatus(`❌ ${error.message || "Gagal mengambil media."}`,"error");
-    }finally{
-        button.disabled=false;
-        button.textContent="Download";
-    }
+function renderImage(
+item,
+index
+){
+const card =
+document.createElement("div");
+
+card.className =
+"media-card";
+
+card.innerHTML = `
+<img
+class="media-preview"
+src="${escapeHtml(item.url)}"
+alt="Foto ${index + 1}"
+loading="lazy"
+>
+
+<div class="media-info">
+<div class="media-title">
+🖼️ Foto ${index + 1}
+</div>
+
+<div class="media-type">
+Foto
+</div>
+
+<div class="media-actions">
+<a
+href="${escapeHtml(item.url)}"
+target="_blank"
+rel="noopener"
+>
+Buka
+</a>
+
+<a
+class="secondary"
+href="${escapeHtml(item.url)}"
+download
+target="_blank"
+rel="noopener"
+>
+Download
+</a>
+</div>
+</div>
+`;
+
+mediaList.appendChild(card);
+}
+
+function renderAudio(
+item,
+index
+){
+const card =
+document.createElement("div");
+
+card.className =
+"media-card";
+
+card.innerHTML = `
+<div class="audio-wrap">
+<div class="audio-icon">
+🎵
+</div>
+
+<audio
+controls
+preload="metadata"
+>
+<source src="${escapeHtml(item.url)}">
+</audio>
+</div>
+
+<div class="media-info">
+<div class="media-title">
+🎵 Audio ${index + 1}
+</div>
+
+<div class="media-type">
+Audio
+</div>
+
+<div class="media-actions">
+<a
+href="${escapeHtml(item.url)}"
+target="_blank"
+rel="noopener"
+>
+Buka
+</a>
+
+<a
+class="secondary"
+href="${escapeHtml(item.url)}"
+download
+target="_blank"
+rel="noopener"
+>
+Download
+</a>
+</div>
+</div>
+`;
+
+mediaList.appendChild(card);
+}
+
+function renderMedia(
+items,
+title=""
+){
+
+mediaList.innerHTML = "";
+
+if(!items.length){
+setStatus(
+"❌ Tidak ada media yang berhasil ditemukan.",
+"error"
+);
+return;
+}
+
+const videos =
+items.filter(
+item =>
+item.type === "video"
+);
+
+const images =
+items.filter(
+item =>
+item.type === "image"
+);
+
+const audios =
+items.filter(
+item =>
+item.type === "audio"
+);
+
+setStatus(
+`✅ ${items.length} media ditemukan` +
+(title ? ` — ${title}` : ""),
+"success"
+);
+
+videos.forEach(
+(item,index) =>
+renderVideo(
+item,
+index
+)
+);
+
+if(images.length){
+
+const gallery =
+document.createElement("div");
+
+gallery.className =
+"media-card";
+
+gallery.innerHTML = `
+<div class="gallery">
+${images.map(
+(item,index) => `
+<a
+href="${escapeHtml(item.url)}"
+target="_blank"
+rel="noopener"
+>
+<img
+src="${escapeHtml(item.url)}"
+alt="Foto ${index + 1}"
+loading="lazy"
+>
+</a>
+`
+).join("")}
+</div>
+
+<div class="media-info">
+<div class="media-title">
+🖼️ ${images.length} Foto
+</div>
+
+<div class="media-type">
+Carousel / Foto
+</div>
+
+<div class="media-actions">
+<a
+href="${escapeHtml(images[0].url)}"
+target="_blank"
+rel="noopener"
+>
+Buka
+</a>
+
+<a
+class="secondary"
+href="${escapeHtml(images[0].url)}"
+download
+target="_blank"
+rel="noopener"
+>
+Download Foto 1
+</a>
+</div>
+</div>
+`;
+
+mediaList.appendChild(gallery);
+
+images.slice(1).forEach(
+(item,index) => {
+
+const card =
+document.createElement("div");
+
+card.className =
+"media-card";
+
+card.innerHTML = `
+<div class="media-info">
+
+<div class="media-title">
+🖼️ Foto ${index + 2}
+</div>
+
+<div class="media-actions">
+<a
+href="${escapeHtml(item.url)}"
+target="_blank"
+rel="noopener"
+>
+Buka
+</a>
+
+<a
+class="secondary"
+href="${escapeHtml(item.url)}"
+download
+target="_blank"
+rel="noopener"
+>
+Download
+</a>
+</div>
+
+</div>
+`;
+
+mediaList.appendChild(card);
 });
+}
+
+audios.forEach(
+(item,index) =>
+renderAudio(
+item,
+index
+)
+);
+}
+
+form.addEventListener(
+"submit",
+async event => {
+
+event.preventDefault();
+
+const url =
+input.value.trim();
+
+if(!url){
+setStatus(
+"❌ Link wajib diisi.",
+"error"
+);
+return;
+}
+
+clearResult();
+
+button.disabled =
+true;
+
+button.textContent =
+"Mengambil...";
+
+setStatus(
+"⏳ Mengambil semua media..."
+);
+
+try{
+
+const response =
+await fetch(
+"/api/download",
+{
+method:"POST",
+headers:{
+"Content-Type":
+"application/json",
+"Accept":
+"application/json"
+},
+body:
+JSON.stringify({
+url
+})
+}
+);
+
+const text =
+await response.text();
+
+let data;
+
+try{
+data =
+JSON.parse(text);
+}catch{
+throw new Error(
+"Server mengirim response bukan JSON."
+);
+}
+
+if(!response.ok){
+throw new Error(
+data?.message ||
+data?.error ||
+`Server error ${response.status}`
+);
+}
+
+if(
+data.success === false
+){
+throw new Error(
+data.message ||
+data.error ||
+"Media gagal diambil."
+);
+}
+
+const items =
+normalizeMedia(data);
+
+renderMedia(
+items,
+data.title ||
+"Cloupanz Download"
+);
+
+}catch(error){
+
+mediaList.innerHTML = "";
+
+setStatus(
+`❌ ${
+error?.message ||
+"Gagal mengambil media."
+}`,
+"error"
+);
+
+}finally{
+
+button.disabled =
+false;
+
+button.textContent =
+"Download";
+}
+}
+);
 </script>
 
 </body>
