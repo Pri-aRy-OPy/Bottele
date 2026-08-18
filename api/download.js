@@ -1,11 +1,9 @@
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
+  if (req.method === "OPTIONS") return res.status(204).end();
 
   if (req.method === "GET") {
     return res.status(200).json({
@@ -23,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    let body = req.body;
+    let body = req.body || {};
 
     if (typeof body === "string") {
       try {
@@ -33,7 +31,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const url = String(body?.url || "").trim();
+    const url = String(body.url || "").trim();
 
     if (!url) {
       return res.status(400).json({
@@ -42,21 +40,12 @@ export default async function handler(req, res) {
       });
     }
 
-    let parsedUrl;
-
     try {
-      parsedUrl = new URL(url);
+      new URL(url);
     } catch {
       return res.status(400).json({
         success: false,
         message: "URL tidak valid."
-      });
-    }
-
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      return res.status(400).json({
-        success: false,
-        message: "Protocol URL tidak valid."
       });
     }
 
@@ -65,21 +54,20 @@ export default async function handler(req, res) {
       encodeURIComponent(url);
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 55000);
+    const timeout = setTimeout(() => controller.abort(), 55000);
 
     let response;
 
     try {
       response = await fetch(apiUrl, {
-        method: "GET",
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
           "User-Agent": "Mozilla/5.0 Cloupanz Downloader"
         },
         signal: controller.signal
       });
     } finally {
-      clearTimeout(timer);
+      clearTimeout(timeout);
     }
 
     const text = await response.text();
@@ -91,7 +79,7 @@ export default async function handler(req, res) {
     } catch {
       return res.status(502).json({
         success: false,
-        message: "Downloader API mengirim response yang tidak valid."
+        message: "API downloader mengirim response tidak valid."
       });
     }
 
@@ -101,11 +89,11 @@ export default async function handler(req, res) {
         message:
           data?.message ||
           data?.error ||
-          `Downloader API error ${response.status}`
+          `API downloader error ${response.status}`
       });
     }
 
-    const media =
+    const root =
       data?.mediaInfo ||
       data?.data?.mediaInfo ||
       data?.result?.mediaInfo ||
@@ -113,58 +101,125 @@ export default async function handler(req, res) {
       data?.data ||
       data;
 
-    const videoUrl =
-      media?.videoUrl ||
-      media?.video_url ||
-      media?.downloadUrl ||
-      media?.download_url ||
-      media?.video ||
-      "";
-
-    const audioUrl =
-      media?.audioUrl ||
-      media?.audio_url ||
-      media?.audio ||
-      "";
-
     const title =
-      media?.title ||
+      root?.title ||
       data?.title ||
       "Cloupanz Download";
 
     const thumbnail =
-      media?.thumbnail ||
-      media?.thumbnailUrl ||
-      media?.thumbnail_url ||
+      root?.thumbnail ||
+      root?.thumbnailUrl ||
+      root?.thumbnail_url ||
       data?.thumbnail ||
       "";
 
-    if (!videoUrl && !audioUrl) {
+    let videoUrl =
+      root?.videoUrl ||
+      root?.video_url ||
+      root?.downloadUrl ||
+      root?.download_url ||
+      root?.video ||
+      "";
+
+    let audioUrl =
+      root?.audioUrl ||
+      root?.audio_url ||
+      root?.audio ||
+      "";
+
+    let images = [];
+
+    const sources = [
+      root?.images,
+      root?.imageUrls,
+      root?.image_urls,
+      root?.photos,
+      root?.photoUrls,
+      root?.photo_urls,
+      root?.media,
+      data?.images,
+      data?.photos
+    ];
+
+    for (const source of sources) {
+      if (!Array.isArray(source)) continue;
+
+      for (const item of source) {
+        if (typeof item === "string") {
+          images.push(item);
+        } else if (item && typeof item === "object") {
+          const image =
+            item.url ||
+            item.imageUrl ||
+            item.image_url ||
+            item.downloadUrl ||
+            item.download_url;
+
+          if (image) images.push(image);
+        }
+      }
+    }
+
+    if (typeof root?.image === "string") {
+      images.push(root.image);
+    }
+
+    if (typeof root?.imageUrl === "string") {
+      images.push(root.imageUrl);
+    }
+
+    if (typeof data?.image === "string") {
+      images.push(data.image);
+    }
+
+    images = [...new Set(images.filter(Boolean))];
+
+    if (!videoUrl && root?.url && root?.type === "video") {
+      videoUrl = root.url;
+    }
+
+    if (!audioUrl && root?.url && root?.type === "audio") {
+      audioUrl = root.url;
+    }
+
+    if (!videoUrl && !audioUrl && !images.length) {
       return res.status(502).json({
         success: false,
-        message: "Video atau audio tidak ditemukan."
+        message: "Media tidak ditemukan dari API downloader."
       });
+    }
+
+    let type = "unknown";
+
+    if (images.length && !videoUrl && !audioUrl) {
+      type = images.length > 1 ? "carousel" : "image";
+    } else if (videoUrl) {
+      type = "video";
+    } else if (audioUrl) {
+      type = "audio";
     }
 
     return res.status(200).json({
       success: true,
+      type,
+      title,
+      thumbnail,
       video_url: videoUrl,
       audio_url: audioUrl,
-      title,
-      thumbnail
+      images,
+      count: images.length
     });
-
   } catch (error) {
     if (error?.name === "AbortError") {
       return res.status(504).json({
         success: false,
-        message: "Downloader terlalu lama merespons."
+        message: "API downloader terlalu lama merespons."
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: error?.message || "Terjadi kesalahan pada server."
+      message: error?.message || "Terjadi kesalahan server."
     });
   }
 }
