@@ -54,7 +54,11 @@ export default async function handler(req, res) {
       encodeURIComponent(url);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000);
+
+    const timeout = setTimeout(
+      () => controller.abort(),
+      55000
+    );
 
     let response;
 
@@ -93,6 +97,163 @@ export default async function handler(req, res) {
       });
     }
 
+    const found = {
+      videos: [],
+      audios: [],
+      images: []
+    };
+
+    const visited = new WeakSet();
+
+    function isUrl(value) {
+      if (typeof value !== "string") return false;
+
+      try {
+        const u = new URL(value);
+
+        return (
+          u.protocol === "http:" ||
+          u.protocol === "https:"
+        );
+      } catch {
+        return false;
+      }
+    }
+
+    function addMedia(type, value) {
+      if (!isUrl(value)) return;
+
+      const clean = value.trim();
+
+      if (!clean) return;
+
+      if (type === "video") {
+        found.videos.push(clean);
+      }
+
+      if (type === "audio") {
+        found.audios.push(clean);
+      }
+
+      if (type === "image") {
+        found.images.push(clean);
+      }
+    }
+
+    function guessType(key, value) {
+      const k = String(key || "").toLowerCase();
+
+      if (
+        k.includes("video") ||
+        k.includes("mp4") ||
+        k.includes("video_url")
+      ) {
+        return "video";
+      }
+
+      if (
+        k.includes("audio") ||
+        k.includes("music") ||
+        k.includes("song") ||
+        k.includes("mp3")
+      ) {
+        return "audio";
+      }
+
+      if (
+        k.includes("image") ||
+        k.includes("photo") ||
+        k.includes("picture") ||
+        k.includes("thumbnail") ||
+        k.includes("cover")
+      ) {
+        return "image";
+      }
+
+      if (typeof value === "string") {
+        const lower = value.toLowerCase();
+
+        if (
+          lower.includes(".mp4") ||
+          lower.includes(".webm") ||
+          lower.includes(".mov") ||
+          lower.includes(".m4v")
+        ) {
+          return "video";
+        }
+
+        if (
+          lower.includes(".mp3") ||
+          lower.includes(".m4a") ||
+          lower.includes(".aac") ||
+          lower.includes(".ogg") ||
+          lower.includes(".wav")
+        ) {
+          return "audio";
+        }
+
+        if (
+          lower.includes(".jpg") ||
+          lower.includes(".jpeg") ||
+          lower.includes(".png") ||
+          lower.includes(".webp") ||
+          lower.includes(".gif")
+        ) {
+          return "image";
+        }
+      }
+
+      return null;
+    }
+
+    function scan(value, key = "") {
+      if (value == null) return;
+
+      if (typeof value === "string") {
+        const type = guessType(key, value);
+
+        if (type) {
+          addMedia(type, value);
+        }
+
+        return;
+      }
+
+      if (typeof value !== "object") return;
+
+      if (visited.has(value)) return;
+
+      visited.add(value);
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          scan(item, key);
+        }
+
+        return;
+      }
+
+      for (const [k, v] of Object.entries(value)) {
+        const type = guessType(k, v);
+
+        if (typeof v === "string" && type) {
+          addMedia(type, v);
+        }
+
+        scan(v, k);
+      }
+    }
+
+    scan(data);
+
+    function unique(list) {
+      return [...new Set(list.filter(Boolean))];
+    }
+
+    found.videos = unique(found.videos);
+    found.audios = unique(found.audios);
+    found.images = unique(found.images);
+
     const root =
       data?.mediaInfo ||
       data?.data?.mediaInfo ||
@@ -106,73 +267,47 @@ export default async function handler(req, res) {
       data?.title ||
       "Cloupanz Download";
 
+    let videoUrl = found.videos[0] || "";
+    let audioUrl = found.audios[0] || "";
+
+    let images = found.images;
+
+    if (
+      typeof root?.image === "string" &&
+      isUrl(root.image)
+    ) {
+      images.push(root.image);
+    }
+
+    if (
+      typeof root?.imageUrl === "string" &&
+      isUrl(root.imageUrl)
+    ) {
+      images.push(root.imageUrl);
+    }
+
+    if (
+      typeof root?.photo === "string" &&
+      isUrl(root.photo)
+    ) {
+      images.push(root.photo);
+    }
+
+    if (
+      typeof root?.photoUrl === "string" &&
+      isUrl(root.photoUrl)
+    ) {
+      images.push(root.photoUrl);
+    }
+
+    images = unique(images);
+
     const thumbnail =
       root?.thumbnail ||
       root?.thumbnailUrl ||
       root?.thumbnail_url ||
-      data?.thumbnail ||
+      images[0] ||
       "";
-
-    let videoUrl =
-      root?.videoUrl ||
-      root?.video_url ||
-      root?.downloadUrl ||
-      root?.download_url ||
-      root?.video ||
-      "";
-
-    let audioUrl =
-      root?.audioUrl ||
-      root?.audio_url ||
-      root?.audio ||
-      "";
-
-    let images = [];
-
-    const sources = [
-      root?.images,
-      root?.imageUrls,
-      root?.image_urls,
-      root?.photos,
-      root?.photoUrls,
-      root?.photo_urls,
-      root?.media,
-      data?.images,
-      data?.photos
-    ];
-
-    for (const source of sources) {
-      if (!Array.isArray(source)) continue;
-
-      for (const item of source) {
-        if (typeof item === "string") {
-          images.push(item);
-        } else if (item && typeof item === "object") {
-          const image =
-            item.url ||
-            item.imageUrl ||
-            item.image_url ||
-            item.downloadUrl ||
-            item.download_url;
-
-          if (image) images.push(image);
-        }
-      }
-    }
-
-    if (typeof root?.image === "string") {
-      images.push(root.image);
-    }
-
-    if (typeof root?.imageUrl === "string") {
-      images.push(root.imageUrl);
-    }
-
-    if (typeof data?.image === "string") {
-      images.push(data.image);
-    }
-
-    images = [...new Set(images.filter(Boolean))];
 
     if (!videoUrl && root?.url && root?.type === "video") {
       videoUrl = root.url;
@@ -182,21 +317,28 @@ export default async function handler(req, res) {
       audioUrl = root.url;
     }
 
-    if (!videoUrl && !audioUrl && !images.length) {
+    if (
+      !videoUrl &&
+      !audioUrl &&
+      !images.length
+    ) {
       return res.status(502).json({
         success: false,
-        message: "Media tidak ditemukan dari API downloader."
+        message:
+          "Media tidak ditemukan dari API downloader."
       });
     }
 
     let type = "unknown";
 
-    if (images.length && !videoUrl && !audioUrl) {
-      type = images.length > 1 ? "carousel" : "image";
-    } else if (videoUrl) {
+    if (videoUrl) {
       type = "video";
     } else if (audioUrl) {
       type = "audio";
+    } else if (images.length > 1) {
+      type = "carousel";
+    } else if (images.length === 1) {
+      type = "image";
     }
 
     return res.status(200).json({
@@ -207,8 +349,11 @@ export default async function handler(req, res) {
       video_url: videoUrl,
       audio_url: audioUrl,
       images,
+      videos: found.videos,
+      audios: found.audios,
       count: images.length
     });
+
   } catch (error) {
     if (error?.name === "AbortError") {
       return res.status(504).json({
@@ -219,7 +364,9 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       success: false,
-      message: error?.message || "Terjadi kesalahan server."
+      message:
+        error?.message ||
+        "Terjadi kesalahan server."
     });
   }
 }
