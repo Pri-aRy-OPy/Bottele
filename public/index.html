@@ -50,7 +50,6 @@ input::placeholder{color:#68636e}
 .media-type{color:#aaa2b3;font-size:13px;margin-bottom:14px}
 .media-actions{display:flex;gap:10px}
 .media-actions button{flex:1;min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,#a94fff,#7028dd);font-weight:700;color:#fff;border:0;cursor:pointer}
-.media-actions button.secondary{background:#1a1721;border:1px solid rgba(255,255,255,.08)}
 .audio-box{padding:20px;background:#0b0910}
 .audio-box audio{width:100%}
 .audio-label{font-weight:800;margin-bottom:12px}
@@ -185,7 +184,7 @@ Media foto TikTok yang mempunyai musik dapat menampilkan audio secara terpisah.
 <script>
 const form=document.getElementById("downloadForm");
 const input=document.getElementById("urlInput");
-const button=document.getElementById("downloadBtn");
+const downloadBtn=document.getElementById("downloadBtn");
 const statusBox=document.getElementById("status");
 const mediaList=document.getElementById("mediaList");
 
@@ -315,14 +314,14 @@ if(type==="audio")return`cloupanz-audio-${index}.mp3`;
 return`cloupanz-media-${index}`;
 }
 
-async function downloadMedia(url,fileName,buttonElement){
+async function downloadMedia(url,fileName,element){
 
-const oldText=buttonElement.textContent;
+const oldText=element.textContent;
 
 try{
 
-buttonElement.disabled=true;
-buttonElement.textContent="Mengunduh...";
+element.disabled=true;
+element.textContent="Mengunduh...";
 
 const response=await fetch(url);
 
@@ -331,9 +330,7 @@ throw new Error(`HTTP ${response.status}`);
 }
 
 const blob=await response.blob();
-
 const blobUrl=URL.createObjectURL(blob);
-
 const a=document.createElement("a");
 
 a.href=blobUrl;
@@ -348,19 +345,19 @@ setTimeout(()=>{
 URL.revokeObjectURL(blobUrl);
 },10000);
 
-buttonElement.textContent="✓ Selesai";
+element.textContent="✓ Selesai";
 
 setTimeout(()=>{
-buttonElement.textContent=oldText;
-buttonElement.disabled=false;
+element.textContent=oldText;
+element.disabled=false;
 },1500);
 
 }catch(error){
 
 console.error(error);
 
-buttonElement.disabled=false;
-buttonElement.textContent=oldText;
+element.disabled=false;
+element.textContent=oldText;
 
 status(
 "Gagal download langsung. Coba lagi.",
@@ -370,42 +367,23 @@ status(
 }
 }
 
-function button(url,label,file){
+function createDownloadButton(url,label,file){
 
-const id=
-"download_"+Math.random()
-.toString(36)
-.substring(2,11);
+const element=document.createElement("button");
 
-setTimeout(()=>{
-
-const element=document.getElementById(id);
-
-if(element){
+element.type="button";
+element.textContent=label;
 
 element.addEventListener("click",()=>{
-downloadMedia(
-url,
-file,
-element
-);
+downloadMedia(url,file,element);
 });
 
-}
+const wrapper=document.createElement("div");
 
-},0);
+wrapper.className="media-actions";
+wrapper.appendChild(element);
 
-return`
-<div class="media-actions">
-
-<button
-type="button"
-id="${id}">
-${label}
-</button>
-
-</div>
-`;
+return wrapper;
 }
 
 function renderVideo(item){
@@ -414,39 +392,48 @@ const card=document.createElement("div");
 
 card.className="media-card";
 
-card.innerHTML=`
+const video=document.createElement("video");
 
-<video
-class="media-preview"
-controls
-playsinline
-preload="metadata"
-${item.thumbnail?`poster="${escapeHtml(item.thumbnail)}"`:""}>
+video.className="media-preview";
+video.controls=true;
+video.playsInline=true;
+video.preload="metadata";
 
-<source
-src="${escapeHtml(item.videoUrl)}"
-type="video/mp4">
+if(item.thumbnail){
+video.poster=item.thumbnail;
+}
 
-</video>
+const source=document.createElement("source");
 
-<div class="media-info">
+source.src=item.videoUrl;
+source.type="video/mp4";
 
-<div class="media-type">
-🎬 Video
-</div>
+video.appendChild(source);
 
-<div class="media-title">
-${escapeHtml(item.title)}
-</div>
+const info=document.createElement("div");
 
-${button(
+info.className="media-info";
+
+const type=document.createElement("div");
+type.className="media-type";
+type.textContent="🎬 Video";
+
+const title=document.createElement("div");
+title.className="media-title";
+title.textContent=item.title;
+
+const actions=createDownloadButton(
 item.videoUrl,
 "⬇️ Download Video",
 downloadName("video")
-)}
+);
 
-</div>
-`;
+info.appendChild(type);
+info.appendChild(title);
+info.appendChild(actions);
+
+card.appendChild(video);
+card.appendChild(info);
 
 mediaList.appendChild(card);
 }
@@ -461,32 +448,37 @@ const card=document.createElement("div");
 
 card.className="media-card";
 
-card.innerHTML=`
+const image=document.createElement("img");
 
-<img
-class="media-preview"
-src="${escapeHtml(url)}"
-alt="Foto ${index+1}"
-loading="lazy">
+image.className="media-preview";
+image.src=url;
+image.alt=`Foto ${index+1}`;
+image.loading="lazy";
 
-<div class="media-info">
+const info=document.createElement("div");
 
-<div class="media-type">
-🖼️ Foto ${index+1}
-</div>
+info.className="media-info";
 
-<div class="media-title">
-${escapeHtml(item.title)}
-</div>
+const type=document.createElement("div");
+type.className="media-type";
+type.textContent=`🖼️ Foto ${index+1}`;
 
-${button(
+const title=document.createElement("div");
+title.className="media-title";
+title.textContent=item.title;
+
+const actions=createDownloadButton(
 url,
 `⬇️ Download Foto ${index+1}`,
 downloadName("image",index+1)
-)}
+);
 
-</div>
-`;
+info.appendChild(type);
+info.appendChild(title);
+info.appendChild(actions);
+
+card.appendChild(image);
+card.appendChild(info);
 
 mediaList.appendChild(card);
 
@@ -499,39 +491,49 @@ const card=document.createElement("div");
 
 card.className="media-card";
 
-card.innerHTML=`
+const audioBox=document.createElement("div");
 
-<div class="audio-box">
+audioBox.className="audio-box";
 
-<div class="audio-label">
-🎵 Audio
-</div>
+const label=document.createElement("div");
 
-<audio
-controls
-preload="metadata">
+label.className="audio-label";
+label.textContent="🎵 Audio";
 
-<source
-src="${escapeHtml(item.audioUrl)}">
+const audio=document.createElement("audio");
 
-</audio>
+audio.controls=true;
+audio.preload="metadata";
 
-</div>
+const source=document.createElement("source");
 
-<div class="media-info">
+source.src=item.audioUrl;
 
-<div class="media-title">
-${escapeHtml(item.title)}
-</div>
+audio.appendChild(source);
 
-${button(
+audioBox.appendChild(label);
+audioBox.appendChild(audio);
+
+const info=document.createElement("div");
+
+info.className="media-info";
+
+const title=document.createElement("div");
+
+title.className="media-title";
+title.textContent=item.title;
+
+const actions=createDownloadButton(
 item.audioUrl,
 "⬇️ Download Audio",
 downloadName("audio")
-)}
+);
 
-</div>
-`;
+info.appendChild(title);
+info.appendChild(actions);
+
+card.appendChild(audioBox);
+card.appendChild(info);
 
 mediaList.appendChild(card);
 }
@@ -622,8 +624,8 @@ return;
 
 clearResult();
 
-button.disabled=true;
-button.textContent="Mengambil...";
+downloadBtn.disabled=true;
+downloadBtn.textContent="Mengambil...";
 
 status(
 "⏳ Mengambil media..."
@@ -694,15 +696,14 @@ status(
 
 }finally{
 
-button.disabled=false;
-button.textContent="Download";
+downloadBtn.disabled=false;
+downloadBtn.textContent="Download";
 
 input.value=url;
 
 }
 
 });
-
 </script>
 
 </body>
