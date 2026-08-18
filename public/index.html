@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#09070d">
 <title>Cloupanz Downloader</title>
 
 <style>
@@ -13,33 +12,21 @@ margin:0;
 padding:0
 }
 
-html{
-scroll-behavior:smooth
-}
-
 body{
 font-family:Arial,Helvetica,sans-serif;
-min-height:100vh;
 background:
-radial-gradient(circle at 50% -10%,#35145c 0,#130b20 30%,#08070c 65%);
-color:#fff
-}
-
-button,input{
-font:inherit
-}
-
-button{
-cursor:pointer
+radial-gradient(circle at top,#24103d 0,#0a0710 48%,#050407 100%);
+color:#fff;
+min-height:100vh
 }
 
 .container{
-width:min(1050px,calc(100% - 28px));
+width:min(100% - 32px,1050px);
 margin:auto
 }
 
 .header{
-height:72px;
+height:76px;
 display:flex;
 align-items:center;
 justify-content:space-between
@@ -48,63 +35,59 @@ justify-content:space-between
 .logo{
 display:flex;
 align-items:center;
-gap:10px;
-font-size:21px;
+gap:12px;
+font-size:25px;
 font-weight:800
 }
 
 .logo-icon{
-width:39px;
-height:39px;
-border-radius:12px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:linear-gradient(135deg,#a855f7,#6d28d9);
-box-shadow:0 8px 25px #8b5cf633
+width:46px;
+height:46px;
+display:grid;
+place-items:center;
+border-radius:14px;
+background:linear-gradient(135deg,#a855f7,#7c3aed);
+font-size:25px;
+box-shadow:0 12px 35px #7c3aed55
 }
 
 .admin-link{
 color:#aaa;
 text-decoration:none;
-font-size:14px
-}
-
-.admin-link:hover{
-color:#fff
+font-size:15px
 }
 
 .hero{
-padding:55px 0 35px;
+padding:70px 0 40px;
 text-align:center
 }
 
 .badge{
 display:inline-flex;
 align-items:center;
-gap:7px;
-padding:8px 13px;
-border:1px solid #ffffff12;
+gap:8px;
+padding:9px 15px;
 border-radius:30px;
 background:#ffffff08;
+border:1px solid #ffffff12;
 color:#c7b9d8;
-font-size:13px;
-margin-bottom:20px
+font-size:14px;
+margin-bottom:22px
 }
 
 .badge-dot{
-width:7px;
-height:7px;
+width:8px;
+height:8px;
 border-radius:50%;
 background:#4ade80;
-box-shadow:0 0 12px #4ade80
+box-shadow:0 0 14px #4ade80
 }
 
 .hero h1{
-font-size:clamp(42px,8vw,78px);
+font-size:clamp(42px,8vw,82px);
 line-height:.95;
 letter-spacing:-4px;
-margin-bottom:18px
+margin-bottom:22px
 }
 
 .gradient{
@@ -115,34 +98,34 @@ color:transparent
 }
 
 .hero p{
-max-width:600px;
+max-width:680px;
 margin:auto;
 color:#aaa5b5;
-font-size:17px;
-line-height:1.6
+font-size:18px;
+line-height:1.7
 }
 
 .search-box{
-margin:30px auto 0;
-max-width:750px;
-padding:7px;
+margin:34px auto 0;
+max-width:850px;
+padding:8px;
 display:flex;
-gap:7px;
-border-radius:20px;
+gap:8px;
+border-radius:22px;
 background:#111019;
 border:1px solid #292331;
-box-shadow:0 25px 70px #0008
+box-shadow:0 25px 80px #0008
 }
 
 #urlInput{
 flex:1;
 min-width:0;
-height:58px;
+height:60px;
 border:0;
 outline:0;
 background:transparent;
 color:#fff;
-padding:0 16px;
+padding:0 17px;
 font-size:16px
 }
 
@@ -151,34 +134,28 @@ color:#686270
 }
 
 #downloadBtn{
-height:58px;
+height:60px;
 border:0;
-border-radius:15px;
-padding:0 25px;
+border-radius:16px;
+padding:0 30px;
 background:linear-gradient(135deg,#a855f7,#7c3aed);
 color:#fff;
 font-weight:800;
+font-size:16px;
 white-space:nowrap;
-box-shadow:0 10px 30px #7c3aed44
+box-shadow:0 12px 35px #7c3aed44
 }
 
 #downloadBtn:disabled{
-opacity:.6;
-cursor:wait
+opacity:.6
 }
 
-.error,
-.loading{
-max-width:750px;
-margin:18px auto 0;
-padding:15px 18px;
-border-radius:15px
-}
-
+.loading,
 .error{
-background:#ef444414;
-border:1px solid #ef444433;
-color:#ff8091
+max-width:850px;
+margin:20px auto 0;
+padding:16px 20px;
+border-radius:16px
 }
 
 .loading{
@@ -187,52 +164,57 @@ border:1px solid #ffffff0d;
 color:#aaa
 }
 
+.error{
+background:#ef444414;
+border:1px solid #ef444433;
+color:#ff8091
+}
+
 .result-card{
-margin:25px auto 0;
-max-width:850px;
+margin:28px auto 0;
+max-width:900px;
 padding:22px;
-border-radius:22px;
+border-radius:24px;
 background:#111019;
 border:1px solid #292331;
 text-align:left
 }
 
 .result-card h2{
-font-size:21px;
+font-size:22px;
 margin-bottom:18px;
 word-break:break-word
-}
-
-.thumbnail{
-display:block;
-width:100%;
-max-height:430px;
-object-fit:cover;
-border-radius:17px;
-margin-bottom:16px;
-background:#050505
 }
 
 .media-preview{
 display:block;
 width:100%;
-max-height:550px;
-border-radius:17px;
+max-height:650px;
+border-radius:18px;
 background:#000;
-margin-bottom:14px
+margin-bottom:15px
 }
 
 .audio-preview{
 display:block;
 width:100%;
-margin:15px 0
+margin:18px 0
+}
+
+.thumbnail{
+display:block;
+width:100%;
+max-height:500px;
+object-fit:cover;
+border-radius:18px;
+margin-bottom:16px
 }
 
 .download-btn{
 display:block;
 width:100%;
-padding:14px;
-border-radius:13px;
+padding:15px;
+border-radius:14px;
 text-align:center;
 text-decoration:none;
 background:linear-gradient(135deg,#a855f7,#7c3aed);
@@ -250,7 +232,7 @@ gap:14px
 .image-item{
 overflow:hidden;
 border:1px solid #292331;
-border-radius:17px;
+border-radius:18px;
 background:#0b0910
 }
 
@@ -270,40 +252,51 @@ margin:0
 text-align:center;
 color:#aaa;
 font-size:14px;
-padding-top:17px
+padding-top:18px
+}
+
+.type-badge{
+display:inline-block;
+padding:7px 11px;
+border-radius:20px;
+background:#7c3aed22;
+color:#c084fc;
+font-size:13px;
+margin-bottom:15px
 }
 
 .features{
 display:grid;
 grid-template-columns:repeat(3,1fr);
-gap:15px;
-margin:55px 0
+gap:16px;
+margin:60px 0
 }
 
 .feature{
-padding:23px;
-border-radius:20px;
+padding:25px;
+border-radius:22px;
 background:#ffffff05;
 border:1px solid #ffffff0c
 }
 
 .feature-icon{
-font-size:28px;
-margin-bottom:13px
+font-size:30px;
+margin-bottom:14px
 }
 
 .feature h3{
-margin-bottom:7px
+margin-bottom:8px;
+font-size:20px
 }
 
 .feature p{
 color:#92909a;
 font-size:14px;
-line-height:1.6
+line-height:1.7
 }
 
 .footer{
-padding:30px 0 45px;
+padding:30px 0 50px;
 text-align:center;
 color:#65616d;
 font-size:13px
@@ -311,8 +304,12 @@ font-size:13px
 
 @media(max-width:700px){
 
+.container{
+width:min(100% - 22px,1050px)
+}
+
 .hero{
-padding:40px 0 25px
+padding:45px 0 25px
 }
 
 .hero h1{
@@ -320,8 +317,7 @@ letter-spacing:-2px
 }
 
 .search-box{
-flex-direction:column;
-padding:7px
+flex-direction:column
 }
 
 #urlInput{
@@ -347,12 +343,16 @@ grid-template-columns:1fr
 <body>
 
 <header class="container header">
+
 <div class="logo">
 <div class="logo-icon">☁️</div>
 <span>Cloupanz</span>
 </div>
 
-<a href="/admin.html" class="admin-link">Admin</a>
+<a href="/admin.html" class="admin-link">
+Admin
+</a>
+
 </header>
 
 <main class="container">
@@ -370,8 +370,8 @@ Download
 </h1>
 
 <p>
-Tempel link video, foto, atau carousel.
-Cloupanz akan mencoba mengambil media yang tersedia.
+Tempel link video, foto, audio, atau carousel.
+Cloupanz akan mencoba mengambil semua media yang tersedia.
 </p>
 
 <div class="search-box">
@@ -380,7 +380,7 @@ Cloupanz akan mencoba mengambil media yang tersedia.
 id="urlInput"
 type="url"
 autocomplete="off"
-placeholder="Tempel link di sini..."
+placeholder="Tempel link TikTok / Instagram..."
 >
 
 <button id="downloadBtn">
@@ -399,7 +399,7 @@ Download
 <div class="feature-icon">🎬</div>
 <h3>Video</h3>
 <p>
-Ambil video dari link yang didukung dan tampilkan langsung di halaman.
+Download dan preview video langsung dari halaman.
 </p>
 </div>
 
@@ -407,7 +407,7 @@ Ambil video dari link yang didukung dan tampilkan langsung di halaman.
 <div class="feature-icon">🖼️</div>
 <h3>Foto</h3>
 <p>
-Link gambar dapat ditampilkan sebagai preview dan disediakan tombol download.
+Foto Instagram atau gambar hasil downloader akan ditampilkan dan bisa disimpan.
 </p>
 </div>
 
@@ -415,7 +415,7 @@ Link gambar dapat ditampilkan sebagai preview dan disediakan tombol download.
 <div class="feature-icon">📚</div>
 <h3>Carousel</h3>
 <p>
-Jika API mengembalikan beberapa foto, semua foto akan ditampilkan sekaligus.
+Kalau satu posting berisi banyak foto, semuanya akan ditampilkan.
 </p>
 </div>
 
@@ -463,21 +463,26 @@ result.innerHTML=`
 
 function renderResult(data){
 
+let type=data.type||"unknown";
+
+let typeText={
+video:"🎬 Video",
+image:"🖼️ Foto",
+carousel:"📚 Carousel",
+audio:"🎵 Audio"
+}[type]||"📦 Media";
+
 let html=`
 <div class="result-card">
-<h2>${escapeHtml(data.title||"Cloupanz Download")}</h2>
-`;
 
-if(data.thumbnail){
-html+=`
-<img
-class="thumbnail"
-src="${escapeAttr(data.thumbnail)}"
-alt="Thumbnail"
-loading="lazy"
->
+<div class="type-badge">
+${typeText}
+</div>
+
+<h2>
+${escapeHtml(data.title||"Cloupanz Download")}
+</h2>
 `;
-}
 
 if(data.video_url){
 
@@ -575,6 +580,34 @@ html+=`
 
 }
 
+if(
+!data.video_url &&
+!data.audio_url &&
+!images.length &&
+data.thumbnail
+){
+
+html+=`
+<img
+class="thumbnail"
+src="${escapeAttr(data.thumbnail)}"
+alt="Media"
+loading="lazy"
+>
+
+<a
+class="download-btn"
+href="${escapeAttr(data.thumbnail)}"
+target="_blank"
+rel="noopener noreferrer"
+download
+>
+🖼️ Download Foto
+</a>
+`;
+
+}
+
 html+=`
 </div>
 `;
@@ -615,12 +648,10 @@ body:JSON.stringify({url})
 const data=await response.json().catch(()=>null);
 
 if(!response.ok||!data?.success){
-
 throw new Error(
 data?.message||
 "Media gagal diproses."
 );
-
 }
 
 renderResult(data);
@@ -641,14 +672,20 @@ button.textContent="Download";
 
 }
 
-button.addEventListener("click",downloadMedia);
+button.addEventListener(
+"click",
+downloadMedia
+);
 
-input.addEventListener("keydown",event=>{
+input.addEventListener(
+"keydown",
+event=>{
 if(event.key==="Enter"){
 event.preventDefault();
 downloadMedia();
 }
-});
+}
+);
 </script>
 
 </body>
