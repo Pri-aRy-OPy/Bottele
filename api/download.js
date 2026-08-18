@@ -42,12 +42,28 @@ export default async function handler(req, res) {
       });
     }
 
+    let inputUrl;
+
     try {
-      new URL(url);
+      inputUrl = new URL(url);
     } catch {
       return res.status(400).json({
         success: false,
         message: "URL tidak valid."
+      });
+    }
+
+    const host = inputUrl.hostname.toLowerCase();
+
+    if (
+      !host.includes("tiktok.com") &&
+      !host.includes("instagram.com") &&
+      !host.includes("youtube.com") &&
+      !host.includes("youtu.be")
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Platform belum didukung."
       });
     }
 
@@ -56,7 +72,10 @@ export default async function handler(req, res) {
       encodeURIComponent(url);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000);
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, 55000);
 
     let response;
 
@@ -115,218 +134,100 @@ export default async function handler(req, res) {
       data?.thumbnail ||
       "";
 
-    const videos = [];
-    const images = [];
-    const audios = [];
+    let videoUrl =
+      root?.videoUrl ||
+      root?.video_url ||
+      root?.downloadUrl ||
+      root?.download_url ||
+      root?.video ||
+      "";
 
-    const addUnique = (arr, value) => {
+    let audioUrl =
+      root?.audioUrl ||
+      root?.audio_url ||
+      root?.audio ||
+      "";
+
+    const images = [];
+
+    function addImage(value) {
       if (!value || typeof value !== "string") return;
 
       try {
-        const u = new URL(value);
+        const parsed = new URL(value);
 
         if (
-          u.protocol !== "http:" &&
-          u.protocol !== "https:"
+          parsed.protocol === "http:" ||
+          parsed.protocol === "https:"
         ) {
-          return;
-        }
-
-        if (!arr.includes(value)) {
-          arr.push(value);
+          images.push(value);
         }
       } catch {}
-    };
+    }
 
-    const detectType = (value, fallback = "") => {
-      const type = String(
-        fallback || ""
-      ).toLowerCase();
-
-      if (
-        type.includes("video") ||
-        type.includes("mp4")
-      ) {
-        return "video";
-      }
-
-      if (
-        type.includes("image") ||
-        type.includes("photo") ||
-        type.includes("jpg") ||
-        type.includes("jpeg") ||
-        type.includes("png") ||
-        type.includes("webp")
-      ) {
-        return "image";
-      }
-
-      if (
-        type.includes("audio") ||
-        type.includes("mp3") ||
-        type.includes("m4a") ||
-        type.includes("aac")
-      ) {
-        return "audio";
-      }
-
-      const clean = String(value || "")
-        .toLowerCase()
-        .split("?")[0];
-
-      if (
-        /\.(mp4|webm|mov|m4v|mkv)$/i.test(clean)
-      ) {
-        return "video";
-      }
-
-      if (
-        /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(clean)
-      ) {
-        return "image";
-      }
-
-      if (
-        /\.(mp3|m4a|aac|ogg|wav|flac)$/i.test(clean)
-      ) {
-        return "audio";
-      }
-
-      return "";
-    };
-
-    const addMedia = (item, forcedType = "") => {
+    function addImageObject(item) {
       if (!item) return;
 
       if (typeof item === "string") {
-        const type = detectType(item, forcedType);
-
-        if (type === "video") {
-          addUnique(videos, item);
-        } else if (type === "image") {
-          addUnique(images, item);
-        } else if (type === "audio") {
-          addUnique(audios, item);
-        }
-
+        addImage(item);
         return;
       }
 
       if (typeof item !== "object") return;
 
-      const type = detectType(
+      addImage(
         item.url ||
-        item.src ||
-        item.mediaUrl ||
-        item.downloadUrl ||
-        item.download_url ||
-        item.videoUrl ||
-        item.imageUrl ||
-        item.audioUrl,
-        item.type ||
-        item.mime ||
-        forcedType
-      );
-
-      const video =
-        item.videoUrl ||
-        item.video_url ||
-        item.video ||
-        (
-          type === "video"
-            ? item.url ||
-              item.src ||
-              item.mediaUrl ||
-              item.downloadUrl ||
-              item.download_url
-            : ""
-        );
-
-      const image =
         item.imageUrl ||
         item.image_url ||
-        item.image ||
-        (
-          type === "image"
-            ? item.url ||
-              item.src ||
-              item.mediaUrl ||
-              item.downloadUrl ||
-              item.download_url
-            : ""
-        );
+        item.downloadUrl ||
+        item.download_url ||
+        item.src ||
+        item.source
+      );
+    }
 
-      const audio =
-        item.audioUrl ||
-        item.audio_url ||
-        item.audio ||
-        (
-          type === "audio"
-            ? item.url ||
-              item.src ||
-              item.mediaUrl ||
-              item.downloadUrl ||
-              item.download_url
-            : ""
-        );
+    const imageSources = [
+      root?.images,
+      root?.imageUrls,
+      root?.image_urls,
+      root?.photos,
+      root?.photoUrls,
+      root?.photo_urls,
+      root?.slides,
+      root?.carousel,
+      root?.carouselMedia,
+      root?.carousel_media,
+      data?.images,
+      data?.photos,
+      data?.imageUrls,
+      data?.image_urls
+    ];
 
-      addUnique(videos, video);
-      addUnique(images, image);
-      addUnique(audios, audio);
+    for (const source of imageSources) {
+      if (!Array.isArray(source)) continue;
 
-      for (const key of [
-        "media",
-        "items",
-        "results",
-        "data",
-        "carousel",
-        "carouselMedia",
-        "carousel_media",
-        "slides",
-        "photos",
-        "images",
-        "videos",
-        "audios"
-      ]) {
-        if (Array.isArray(item[key])) {
-          for (const child of item[key]) {
-            addMedia(
-              child,
-              key.includes("video")
-                ? "video"
-                : key.includes("audio")
-                ? "audio"
-                : key.includes("image") ||
-                  key.includes("photo")
-                ? "image"
-                : ""
-            );
-          }
-        }
+      for (const item of source) {
+        addImageObject(item);
       }
-    };
+    }
 
-    addMedia(root);
-    addMedia(data);
+    addImage(root?.image);
+    addImage(root?.imageUrl);
+    addImage(root?.image_url);
+    addImage(root?.photo);
+    addImage(root?.photoUrl);
+    addImage(root?.photo_url);
 
-    addMedia(root?.videoUrl, "video");
-    addMedia(root?.video_url, "video");
-    addMedia(root?.downloadUrl, "video");
-    addMedia(root?.download_url, "video");
+    addImage(data?.image);
+    addImage(data?.imageUrl);
+    addImage(data?.image_url);
 
-    addMedia(root?.audioUrl, "audio");
-    addMedia(root?.audio_url, "audio");
-
-    addMedia(root?.imageUrl, "image");
-    addMedia(root?.image_url, "image");
-    addMedia(root?.image, "image");
-
-    const recursiveScan = (value, depth = 0) => {
-      if (!value || depth > 6) return;
+    const walkImages = (value, depth = 0) => {
+      if (!value || depth > 5) return;
 
       if (Array.isArray(value)) {
         for (const item of value) {
-          recursiveScan(item, depth + 1);
+          walkImages(item, depth + 1);
         }
         return;
       }
@@ -336,101 +237,133 @@ export default async function handler(req, res) {
       for (const [key, item] of Object.entries(value)) {
         const lower = key.toLowerCase();
 
-        if (typeof item === "string") {
+        if (
+          typeof item === "string" &&
+          (
+            lower.includes("image") ||
+            lower.includes("photo")
+          )
+        ) {
+          addImage(item);
+        }
+
+        if (Array.isArray(item)) {
           if (
-            lower.includes("video")
-          ) {
-            addMedia(item, "video");
-          } else if (
-            lower.includes("audio") ||
-            lower.includes("music")
-          ) {
-            addMedia(item, "audio");
-          } else if (
             lower.includes("image") ||
             lower.includes("photo") ||
-            lower === "thumbnail"
+            lower.includes("carousel") ||
+            lower.includes("slide")
           ) {
-            addMedia(item, "image");
-          } else if (
-            lower === "url" ||
-            lower === "src" ||
-            lower.includes("download")
-          ) {
-            addMedia(item);
+            for (const entry of item) {
+              addImageObject(entry);
+              walkImages(entry, depth + 1);
+            }
           }
         }
 
-        if (
-          Array.isArray(item) ||
-          typeof item === "object"
-        ) {
-          recursiveScan(item, depth + 1);
+        if (item && typeof item === "object") {
+          walkImages(item, depth + 1);
         }
       }
     };
 
-    recursiveScan(root);
-    recursiveScan(data);
+    walkImages(root);
+    walkImages(data);
 
-    const media = [
-      ...videos.map(url => ({
-        type: "video",
-        url
-      })),
-      ...images.map(url => ({
-        type: "image",
-        url
-      })),
-      ...audios.map(url => ({
-        type: "audio",
-        url
-      }))
-    ];
+    const uniqueImages = [...new Set(images)];
 
-    if (!media.length) {
+    const declaredType = String(
+      root?.type ||
+      root?.mediaType ||
+      root?.media_type ||
+      data?.type ||
+      ""
+    ).toLowerCase();
+
+    if (
+      !videoUrl &&
+      root?.url &&
+      (
+        declaredType.includes("video") ||
+        declaredType.includes("mp4")
+      )
+    ) {
+      videoUrl = root.url;
+    }
+
+    if (
+      !audioUrl &&
+      root?.url &&
+      declaredType.includes("audio")
+    ) {
+      audioUrl = root.url;
+    }
+
+    let type = "unknown";
+
+    if (uniqueImages.length > 0) {
+      type =
+        uniqueImages.length > 1
+          ? "carousel"
+          : "image";
+
+      videoUrl = "";
+    } else if (videoUrl) {
+      type = "video";
+    } else if (audioUrl) {
+      type = "audio";
+    }
+
+    if (
+      !videoUrl &&
+      !audioUrl &&
+      !uniqueImages.length
+    ) {
       return res.status(502).json({
         success: false,
         message: "Media tidak ditemukan dari API downloader."
       });
     }
 
-    let type = "unknown";
+    if (type === "video") {
+      return res.status(200).json({
+        success: true,
+        type: "video",
+        title,
+        thumbnail,
+        video_url: videoUrl,
+        audio_url: audioUrl,
+        images: [],
+        count: 0
+      });
+    }
 
     if (
-      videos.length &&
-      images.length
+      type === "image" ||
+      type === "carousel"
     ) {
-      type = "mixed";
-    } else if (videos.length) {
-      type = "video";
-    } else if (images.length > 1) {
-      type = "carousel";
-    } else if (images.length === 1) {
-      type = "image";
-    } else if (audios.length) {
-      type = "audio";
+      return res.status(200).json({
+        success: true,
+        type,
+        title,
+        thumbnail,
+        video_url: "",
+        audio_url: "",
+        images: uniqueImages,
+        count: uniqueImages.length
+      });
     }
 
     return res.status(200).json({
       success: true,
-      type,
+      type: "audio",
       title,
       thumbnail,
-      video_url: videos[0] || "",
-      video_urls: videos,
-      audio_url: audios[0] || "",
-      audio_urls: audios,
-      images,
-      media,
-      count: media.length,
-      counts: {
-        video: videos.length,
-        image: images.length,
-        audio: audios.length
-      }
+      video_url: "",
+      audio_url: audioUrl,
+      images: [],
+      count: 0
     });
-
   } catch (error) {
     if (error?.name === "AbortError") {
       return res.status(504).json({
@@ -443,7 +376,7 @@ export default async function handler(req, res) {
       success: false,
       message:
         error?.message ||
-        "Terjadi kesalahan server."
+        "Terjadi kesalahan pada server."
     });
   }
-}
+          }
