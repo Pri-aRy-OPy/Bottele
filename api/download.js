@@ -1,69 +1,44 @@
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
-  if (req.method === "GET") {
-    return res.status(200).json({
-      success: true,
-      service: "Cloupanz Downloader",
-      status: "online"
-    });
-  }
-
   if (req.method !== "POST") {
     return res.status(405).json({
       success: false,
-      message: "Method tidak diizinkan."
+      message: "Method not allowed"
     });
   }
 
   try {
-    let body = req.body || {};
-
-    if (typeof body === "string") {
-      try {
-        body = JSON.parse(body);
-      } catch {
-        body = {};
-      }
-    }
-
-    const url = String(body.url || "").trim();
+    const { url } = req.body || {};
 
     if (!url) {
       return res.status(400).json({
         success: false,
-        message: "URL belum diberikan."
+        message: "URL wajib diisi"
       });
     }
 
-    let inputUrl;
+    let parsedUrl;
 
     try {
-      inputUrl = new URL(url);
+      parsedUrl = new URL(url);
     } catch {
       return res.status(400).json({
         success: false,
-        message: "URL tidak valid."
+        message: "URL tidak valid"
       });
     }
 
-    const host = inputUrl.hostname.toLowerCase();
+    const hostname = parsedUrl.hostname.toLowerCase();
 
-    if (
-      !host.includes("tiktok.com") &&
-      !host.includes("instagram.com") &&
-      !host.includes("youtube.com") &&
-      !host.includes("youtu.be")
-    ) {
+    const supported =
+      hostname.includes("tiktok.com") ||
+      hostname.includes("instagram.com") ||
+      hostname.includes("instagr.am");
+
+    if (!supported) {
       return res.status(400).json({
         success: false,
-        message: "Platform belum didukung."
+        message: "Hanya TikTok dan Instagram yang didukung"
       });
     }
 
@@ -71,109 +46,132 @@ export default async function handler(req, res) {
       "https://ahm7xmakki.com/api/alldl?url=" +
       encodeURIComponent(url);
 
-    const controller = new AbortController();
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
 
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 55000);
-
-    let response;
-
-    try {
-      response = await fetch(apiUrl, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": "Mozilla/5.0 Cloupanz Downloader"
-        },
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    const text = await response.text();
-
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      return res.status(502).json({
-        success: false,
-        message: "API downloader mengirim response tidak valid."
-      });
-    }
+    const raw = await response.text();
 
     if (!response.ok) {
       return res.status(502).json({
         success: false,
-        message:
-          data?.message ||
-          data?.error ||
-          `API downloader error ${response.status}`
+        message: `Downloader API error ${response.status}`,
+        detail: raw.slice(0, 500)
+      });
+    }
+
+    let apiData;
+
+    try {
+      apiData = JSON.parse(raw);
+    } catch {
+      return res.status(502).json({
+        success: false,
+        message: "Response downloader API bukan JSON"
       });
     }
 
     const root =
-      data?.mediaInfo ||
-      data?.data?.mediaInfo ||
-      data?.result?.mediaInfo ||
-      data?.result ||
-      data?.data ||
-      data;
+      apiData?.data?.mediaInfo ||
+      apiData?.mediaInfo ||
+      apiData?.data ||
+      apiData?.result ||
+      apiData;
 
     const title =
       root?.title ||
-      data?.title ||
+      apiData?.title ||
       "Cloupanz Download";
 
     const thumbnail =
       root?.thumbnail ||
       root?.thumbnailUrl ||
       root?.thumbnail_url ||
-      data?.thumbnail ||
+      apiData?.thumbnail ||
+      apiData?.thumbnailUrl ||
       "";
 
-    let videoUrl =
-      root?.videoUrl ||
-      root?.video_url ||
-      root?.downloadUrl ||
-      root?.download_url ||
-      root?.video ||
-      "";
-
-    let audioUrl =
-      root?.audioUrl ||
-      root?.audio_url ||
-      root?.audio ||
-      "";
-
-    const images = [];
-
-    function addImage(value) {
-      if (!value || typeof value !== "string") return;
+    const isValidUrl = value => {
+      if (!value || typeof value !== "string") {
+        return false;
+      }
 
       try {
         const parsed = new URL(value);
 
-        if (
+        return (
           parsed.protocol === "http:" ||
           parsed.protocol === "https:"
-        ) {
-          images.push(value);
-        }
-      } catch {}
-    }
+        );
+      } catch {
+        return false;
+      }
+    };
 
-    function addImageObject(item) {
-      if (!item) return;
+    const firstValid = (...values) => {
+      for (const value of values) {
+        if (isValidUrl(value)) {
+          return value;
+        }
+      }
+
+      return "";
+    };
+
+    let videoUrl = firstValid(
+      root?.videoUrl,
+      root?.video_url,
+      root?.video,
+      root?.downloadVideo,
+      root?.download_video,
+      apiData?.videoUrl,
+      apiData?.video_url
+    );
+
+    let audioUrl = firstValid(
+      root?.audioUrl,
+      root?.audio_url,
+      root?.audio,
+      root?.musicUrl,
+      root?.music_url,
+      root?.music,
+      apiData?.audioUrl,
+      apiData?.audio_url
+    );
+
+    const images = [];
+
+    const addImage = value => {
+      if (!isValidUrl(value)) {
+        return;
+      }
+
+      if (value === thumbnail) {
+        return;
+      }
+
+      if (!images.includes(value)) {
+        images.push(value);
+      }
+    };
+
+    const addImageItem = item => {
+      if (!item) {
+        return;
+      }
 
       if (typeof item === "string") {
         addImage(item);
         return;
       }
 
-      if (typeof item !== "object") return;
+      if (typeof item !== "object") {
+        return;
+      }
 
       addImage(
         item.url ||
@@ -182,147 +180,90 @@ export default async function handler(req, res) {
         item.downloadUrl ||
         item.download_url ||
         item.src ||
-        item.source
+        item.source ||
+        item.photo
       );
-    }
+    };
 
-    const imageSources = [
+    const imageArrays = [
       root?.images,
       root?.imageUrls,
       root?.image_urls,
       root?.photos,
       root?.photoUrls,
       root?.photo_urls,
-      root?.slides,
       root?.carousel,
       root?.carouselMedia,
       root?.carousel_media,
-      data?.images,
-      data?.photos,
-      data?.imageUrls,
-      data?.image_urls
+      root?.slides,
+      root?.items,
+      apiData?.images,
+      apiData?.imageUrls,
+      apiData?.photos,
+      apiData?.carousel,
+      apiData?.items
     ];
 
-    for (const source of imageSources) {
-      if (!Array.isArray(source)) continue;
+    for (const list of imageArrays) {
+      if (!Array.isArray(list)) {
+        continue;
+      }
 
-      for (const item of source) {
-        addImageObject(item);
+      for (const item of list) {
+        addImageItem(item);
       }
     }
 
-    addImage(root?.image);
-    addImage(root?.imageUrl);
-    addImage(root?.image_url);
-    addImage(root?.photo);
-    addImage(root?.photoUrl);
-    addImage(root?.photo_url);
+    addImage(
+      root?.image ||
+      root?.imageUrl ||
+      root?.image_url ||
+      root?.photo
+    );
 
-    addImage(data?.image);
-    addImage(data?.imageUrl);
-    addImage(data?.image_url);
+    addImage(
+      apiData?.image ||
+      apiData?.imageUrl ||
+      apiData?.image_url ||
+      apiData?.photo
+    );
 
-    const walkImages = (value, depth = 0) => {
-      if (!value || depth > 5) return;
-
-      if (Array.isArray(value)) {
-        for (const item of value) {
-          walkImages(item, depth + 1);
-        }
-        return;
-      }
-
-      if (typeof value !== "object") return;
-
-      for (const [key, item] of Object.entries(value)) {
-        const lower = key.toLowerCase();
-
-        if (
-          typeof item === "string" &&
-          (
-            lower.includes("image") ||
-            lower.includes("photo")
-          )
-        ) {
-          addImage(item);
-        }
-
-        if (Array.isArray(item)) {
-          if (
-            lower.includes("image") ||
-            lower.includes("photo") ||
-            lower.includes("carousel") ||
-            lower.includes("slide")
-          ) {
-            for (const entry of item) {
-              addImageObject(entry);
-              walkImages(entry, depth + 1);
-            }
-          }
-        }
-
-        if (item && typeof item === "object") {
-          walkImages(item, depth + 1);
-        }
-      }
-    };
-
-    walkImages(root);
-    walkImages(data);
-
-    const uniqueImages = [...new Set(images)];
-
-    const declaredType = String(
+    const explicitType = String(
       root?.type ||
       root?.mediaType ||
       root?.media_type ||
-      data?.type ||
+      apiData?.type ||
+      apiData?.mediaType ||
+      apiData?.media_type ||
       ""
     ).toLowerCase();
 
-    if (
-      !videoUrl &&
-      root?.url &&
-      (
-        declaredType.includes("video") ||
-        declaredType.includes("mp4")
-      )
-    ) {
-      videoUrl = root.url;
-    }
+    const explicitVideo =
+      explicitType.includes("video");
 
-    if (
-      !audioUrl &&
-      root?.url &&
-      declaredType.includes("audio")
-    ) {
-      audioUrl = root.url;
-    }
+    const explicitImage =
+      explicitType.includes("image") ||
+      explicitType.includes("photo") ||
+      explicitType.includes("carousel");
 
     let type = "unknown";
 
-    if (uniqueImages.length > 0) {
+    if (explicitVideo && videoUrl) {
+      type = "video";
+    } else if (explicitImage && images.length) {
       type =
-        uniqueImages.length > 1
+        images.length > 1
           ? "carousel"
           : "image";
-
-      videoUrl = "";
     } else if (videoUrl) {
       type = "video";
+    } else if (images.length) {
+      type =
+        images.length > 1
+          ? "carousel"
+          : "image";
     } else if (audioUrl) {
       type = "audio";
-    }
-
-    if (
-      !videoUrl &&
-      !audioUrl &&
-      !uniqueImages.length
-    ) {
-      return res.status(502).json({
-        success: false,
-        message: "Media tidak ditemukan dari API downloader."
-      });
     }
 
     if (type === "video") {
@@ -332,51 +273,56 @@ export default async function handler(req, res) {
         title,
         thumbnail,
         video_url: videoUrl,
-        audio_url: audioUrl,
+        audio_url: "",
         images: [],
-        count: 0
+        count: 1
       });
     }
 
-    if (
-      type === "image" ||
-      type === "carousel"
-    ) {
+    if (type === "image" || type === "carousel") {
       return res.status(200).json({
         success: true,
         type,
         title,
         thumbnail,
         video_url: "",
-        audio_url: "",
-        images: uniqueImages,
-        count: uniqueImages.length
+        audio_url: audioUrl,
+        images,
+        count: images.length
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      type: "audio",
-      title,
-      thumbnail,
-      video_url: "",
-      audio_url: audioUrl,
-      images: [],
-      count: 0
-    });
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      return res.status(504).json({
-        success: false,
-        message: "API downloader terlalu lama merespons."
+    if (type === "audio") {
+      return res.status(200).json({
+        success: true,
+        type: "audio",
+        title,
+        thumbnail,
+        video_url: "",
+        audio_url: audioUrl,
+        images: [],
+        count: 1
       });
     }
+
+    return res.status(404).json({
+      success: false,
+      message: "Media tidak ditemukan",
+      debug: {
+        hasVideo: Boolean(videoUrl),
+        hasAudio: Boolean(audioUrl),
+        imageCount: images.length,
+        detectedType: explicitType || null
+      }
+    });
+  } catch (error) {
+    console.error("DOWNLOAD ERROR:", error);
 
     return res.status(500).json({
       success: false,
       message:
         error?.message ||
-        "Terjadi kesalahan pada server."
+        "Gagal mengambil media"
     });
   }
-          }
+      }
