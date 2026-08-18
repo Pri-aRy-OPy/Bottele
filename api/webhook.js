@@ -4,34 +4,40 @@ const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 const ADMIN_PIN = process.env.ADMIN_PIN;
 const DAILY_LIMIT = Number(process.env.DAILY_LIMIT || 5);
 
-const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
+const TELEGRAM_API =
+  `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
 function today() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function userDoc(userId) {
-  return String(userId);
 }
 
 function firestoreBase() {
   return `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
 }
 
+function userDoc(userId) {
+  return String(userId);
+}
+
 async function telegram(method, data) {
-  const response = await fetch(`${TELEGRAM_API}/${method}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  });
+  const response = await fetch(
+    `${TELEGRAM_API}/${method}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    }
+  );
 
   return await response.json();
 }
 
 async function getUser(userId) {
-  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) return null;
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+    return null;
+  }
 
   const url =
     `${firestoreBase()}/users/${encodeURIComponent(userDoc(userId))}` +
@@ -39,13 +45,19 @@ async function getUser(userId) {
 
   const response = await fetch(url);
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    return null;
+  }
 
   return await response.json();
 }
 
 async function saveUser(user) {
-  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY || !user?.id) {
+  if (
+    !FIREBASE_PROJECT_ID ||
+    !FIREBASE_API_KEY ||
+    !user?.id
+  ) {
     return;
   }
 
@@ -53,9 +65,10 @@ async function saveUser(user) {
   const old = await getUser(id);
   const currentDate = today();
 
-  let downloads = Number(
-    old?.fields?.downloads?.integerValue || 0
-  );
+  let downloads =
+    Number(
+      old?.fields?.downloads?.integerValue || 0
+    );
 
   let lastReset =
     old?.fields?.last_reset?.stringValue || "";
@@ -83,7 +96,7 @@ async function saveUser(user) {
         integerValue: String(downloads)
       },
       last_reset: {
-        stringValue: lastReset
+        stringValue: currentDate
       },
       is_admin: {
         booleanValue:
@@ -111,7 +124,9 @@ async function saveUser(user) {
 async function isAdmin(userId) {
   const user = await getUser(userId);
 
-  return user?.fields?.is_admin?.booleanValue === true;
+  return (
+    user?.fields?.is_admin?.booleanValue === true
+  );
 }
 
 async function claimAdmin(user) {
@@ -122,7 +137,10 @@ async function claimAdmin(user) {
     };
   }
 
-  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+  if (
+    !FIREBASE_PROJECT_ID ||
+    !FIREBASE_API_KEY
+  ) {
     return {
       ok: false,
       message: "Firebase belum dikonfigurasi."
@@ -170,13 +188,16 @@ async function claimAdmin(user) {
     }
   };
 
-  const saveConfig = await fetch(configUrl, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(configData)
-  });
+  const saveConfig = await fetch(
+    configUrl,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(configData)
+    }
+  );
 
   if (!saveConfig.ok) {
     return {
@@ -209,7 +230,9 @@ async function claimAdmin(user) {
       },
       downloads: {
         integerValue:
-          String(old?.fields?.downloads?.integerValue || 0)
+          String(
+            old?.fields?.downloads?.integerValue || 0
+          )
       },
       last_reset: {
         stringValue: today()
@@ -261,9 +284,10 @@ async function getDownloadStatus(userId) {
   const lastReset =
     user?.fields?.last_reset?.stringValue || "";
 
-  let downloads = Number(
-    user?.fields?.downloads?.integerValue || 0
-  );
+  let downloads =
+    Number(
+      user?.fields?.downloads?.integerValue || 0
+    );
 
   if (lastReset !== today()) {
     downloads = 0;
@@ -271,22 +295,23 @@ async function getDownloadStatus(userId) {
 
   return {
     downloads,
-    remaining: Math.max(
-      DAILY_LIMIT - downloads,
-      0
-    ),
+    remaining:
+      Math.max(
+        DAILY_LIMIT - downloads,
+        0
+      ),
     admin: false
   };
 }
 
 async function addDownload(user) {
   const old = await getUser(user.id);
-
   const currentDate = today();
 
-  let downloads = Number(
-    old?.fields?.downloads?.integerValue || 0
-  );
+  let downloads =
+    Number(
+      old?.fields?.downloads?.integerValue || 0
+    );
 
   const lastReset =
     old?.fields?.last_reset?.stringValue || "";
@@ -364,22 +389,6 @@ function detectPlatform(url) {
       return "Instagram";
     }
 
-    if (
-      host === "youtube.com" ||
-      host === "youtu.be" ||
-      host.endsWith(".youtube.com")
-    ) {
-      return "YouTube";
-    }
-
-    if (
-      host === "facebook.com" ||
-      host === "fb.watch" ||
-      host.endsWith(".facebook.com")
-    ) {
-      return "Facebook";
-    }
-
     return null;
   } catch {
     return null;
@@ -399,206 +408,6 @@ function isValidUrl(text) {
   }
 }
 
-function isUrl(value) {
-  if (typeof value !== "string") return false;
-
-  try {
-    const url = new URL(value);
-
-    return (
-      url.protocol === "http:" ||
-      url.protocol === "https:"
-    );
-  } catch {
-    return false;
-  }
-}
-
-function unique(values) {
-  return [...new Set(values.filter(Boolean))];
-}
-
-function detectMediaType(key, value, object) {
-  const k = String(key || "").toLowerCase();
-
-  const objectType =
-    object?.type ||
-    object?.mediaType ||
-    object?.mimeType ||
-    object?.mime;
-
-  const type =
-    String(objectType || "").toLowerCase();
-
-  if (
-    type.includes("video") ||
-    type.includes("mp4")
-  ) {
-    return "video";
-  }
-
-  if (
-    type.includes("audio") ||
-    type.includes("mp3") ||
-    type.includes("m4a")
-  ) {
-    return "audio";
-  }
-
-  if (
-    type.includes("image") ||
-    type.includes("photo")
-  ) {
-    return "image";
-  }
-
-  if (
-    k.includes("video") ||
-    k.includes("video_url") ||
-    k === "videourl"
-  ) {
-    return "video";
-  }
-
-  if (
-    k.includes("audio") ||
-    k.includes("audio_url") ||
-    k === "audiourl" ||
-    k.includes("music")
-  ) {
-    return "audio";
-  }
-
-  if (
-    k.includes("image") ||
-    k.includes("photo") ||
-    k.includes("picture") ||
-    k.includes("images") ||
-    k.includes("photos")
-  ) {
-    return "image";
-  }
-
-  if (typeof value === "string") {
-    const v = value.toLowerCase();
-
-    if (
-      v.includes(".mp4") ||
-      v.includes(".webm") ||
-      v.includes(".mov") ||
-      v.includes(".m4v")
-    ) {
-      return "video";
-    }
-
-    if (
-      v.includes(".mp3") ||
-      v.includes(".m4a") ||
-      v.includes(".aac") ||
-      v.includes(".ogg") ||
-      v.includes(".wav")
-    ) {
-      return "audio";
-    }
-
-    if (
-      v.includes(".jpg") ||
-      v.includes(".jpeg") ||
-      v.includes(".png") ||
-      v.includes(".webp") ||
-      v.includes(".gif")
-    ) {
-      return "image";
-    }
-  }
-
-  return null;
-}
-
-function collectMedia(data) {
-  const result = {
-    videos: [],
-    images: [],
-    audios: []
-  };
-
-  const seen = new WeakSet();
-
-  function add(type, value) {
-    if (!isUrl(value)) return;
-
-    if (type === "video") {
-      result.videos.push(value);
-    }
-
-    if (type === "image") {
-      result.images.push(value);
-    }
-
-    if (type === "audio") {
-      result.audios.push(value);
-    }
-  }
-
-  function scan(value, key = "", parent = null) {
-    if (value == null) return;
-
-    if (typeof value === "string") {
-      const type =
-        detectMediaType(
-          key,
-          value,
-          parent
-        );
-
-      if (type) {
-        add(type, value);
-      }
-
-      return;
-    }
-
-    if (typeof value !== "object") return;
-
-    if (seen.has(value)) return;
-
-    seen.add(value);
-
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        scan(item, key, parent);
-      }
-
-      return;
-    }
-
-    for (const [k, v] of Object.entries(value)) {
-      if (typeof v === "string") {
-        const type =
-          detectMediaType(
-            k,
-            v,
-            value
-          );
-
-        if (type) {
-          add(type, v);
-        }
-      }
-
-      scan(v, k, value);
-    }
-  }
-
-  scan(data);
-
-  return {
-    videos: unique(result.videos),
-    images: unique(result.images),
-    audios: unique(result.audios)
-  };
-}
-
 async function downloadInfo(url) {
   const apiUrl =
     `https://ahm7xmakki.com/api/alldl?url=` +
@@ -607,7 +416,7 @@ async function downloadInfo(url) {
   const response = await fetch(apiUrl, {
     headers: {
       Accept: "application/json",
-      "User-Agent": "Mozilla/5.0 Cloupanz"
+      "User-Agent": "Mozilla/5.0 Cloupanz Downloader"
     }
   });
 
@@ -631,7 +440,7 @@ async function downloadInfo(url) {
     );
   }
 
-  const media =
+  const root =
     data?.mediaInfo ||
     data?.data?.mediaInfo ||
     data?.result?.mediaInfo ||
@@ -639,135 +448,213 @@ async function downloadInfo(url) {
     data?.data ||
     data;
 
-  if (!media) {
-    throw new Error(
-      "Media tidak ditemukan."
-    );
-  }
-
-  const collected =
-    collectMedia(media);
-
   const title =
-    media?.title ||
+    root?.title ||
     data?.title ||
-    "Cloupanz Media";
+    "Cloupanz Download";
 
   const thumbnail =
-    media?.thumbnail ||
-    media?.thumbnailUrl ||
-    media?.thumbnail_url ||
+    root?.thumbnail ||
+    root?.thumbnailUrl ||
+    root?.thumbnail_url ||
+    data?.thumbnail ||
     "";
 
-  if (
-    typeof media?.videoUrl === "string" &&
-    isUrl(media.videoUrl)
-  ) {
-    collected.videos.unshift(
-      media.videoUrl
+  const videoUrl =
+    root?.videoUrl ||
+    root?.video_url ||
+    root?.downloadUrl ||
+    root?.download_url ||
+    root?.video ||
+    "";
+
+  const audioUrl =
+    root?.audioUrl ||
+    root?.audio_url ||
+    root?.audio ||
+    "";
+
+  const images = [];
+
+  const add = value => {
+    if (typeof value !== "string") return;
+
+    try {
+      const parsed = new URL(value);
+
+      if (
+        parsed.protocol === "http:" ||
+        parsed.protocol === "https:"
+      ) {
+        images.push(value);
+      }
+    } catch {}
+  };
+
+  const addObject = item => {
+    if (!item) return;
+
+    if (typeof item === "string") {
+      add(item);
+      return;
+    }
+
+    if (typeof item !== "object") return;
+
+    add(
+      item.url ||
+      item.imageUrl ||
+      item.image_url ||
+      item.downloadUrl ||
+      item.download_url ||
+      item.src ||
+      item.source
     );
+  };
+
+  const sources = [
+    root?.images,
+    root?.imageUrls,
+    root?.image_urls,
+    root?.photos,
+    root?.photoUrls,
+    root?.photo_urls,
+    root?.media,
+    root?.items,
+    root?.slides,
+    root?.carousel,
+    root?.carouselMedia,
+    root?.carousel_media,
+    data?.images,
+    data?.photos,
+    data?.media
+  ];
+
+  for (const source of sources) {
+    if (!Array.isArray(source)) continue;
+
+    for (const item of source) {
+      addObject(item);
+    }
+  }
+
+  add(root?.image);
+  add(root?.imageUrl);
+  add(root?.image_url);
+  add(root?.photo);
+  add(root?.photoUrl);
+  add(root?.photo_url);
+  add(data?.image);
+  add(data?.imageUrl);
+
+  const walk = (value, depth = 0) => {
+    if (!value || depth > 5) return;
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        walk(item, depth + 1);
+      }
+      return;
+    }
+
+    if (typeof value !== "object") return;
+
+    for (const [key, item] of Object.entries(value)) {
+      const lower = key.toLowerCase();
+
+      if (
+        typeof item === "string" &&
+        (
+          lower.includes("image") ||
+          lower.includes("photo") ||
+          lower === "src"
+        )
+      ) {
+        add(item);
+      }
+
+      if (
+        Array.isArray(item) &&
+        (
+          lower.includes("image") ||
+          lower.includes("photo") ||
+          lower.includes("media") ||
+          lower.includes("carousel")
+        )
+      ) {
+        for (const entry of item) {
+          addObject(entry);
+          walk(entry, depth + 1);
+        }
+      }
+
+      if (item && typeof item === "object") {
+        walk(item, depth + 1);
+      }
+    }
+  };
+
+  walk(root);
+  walk(data);
+
+  const uniqueImages = [
+    ...new Set(images)
+  ];
+
+  if (
+    !videoUrl &&
+    root?.url &&
+    String(root?.type || "").toLowerCase() === "video"
+  ) {
+    return {
+      type: "video",
+      title,
+      thumbnail,
+      videoUrl: root.url,
+      audioUrl: "",
+      images: []
+    };
   }
 
   if (
-    typeof media?.video_url === "string" &&
-    isUrl(media.video_url)
+    !audioUrl &&
+    root?.url &&
+    String(root?.type || "").toLowerCase() === "audio"
   ) {
-    collected.videos.unshift(
-      media.video_url
-    );
+    return {
+      type: "audio",
+      title,
+      thumbnail,
+      videoUrl: "",
+      audioUrl: root.url,
+      images: []
+    };
   }
 
   if (
-    typeof media?.imageUrl === "string" &&
-    isUrl(media.imageUrl)
-  ) {
-    collected.images.unshift(
-      media.imageUrl
-    );
-  }
-
-  if (
-    typeof media?.image_url === "string" &&
-    isUrl(media.image_url)
-  ) {
-    collected.images.unshift(
-      media.image_url
-    );
-  }
-
-  if (
-    typeof media?.image === "string" &&
-    isUrl(media.image)
-  ) {
-    collected.images.unshift(
-      media.image
-    );
-  }
-
-  if (
-    typeof media?.photo === "string" &&
-    isUrl(media.photo)
-  ) {
-    collected.images.unshift(
-      media.photo
-    );
-  }
-
-  if (
-    typeof media?.photoUrl === "string" &&
-    isUrl(media.photoUrl)
-  ) {
-    collected.images.unshift(
-      media.photoUrl
-    );
-  }
-
-  if (
-    typeof media?.audioUrl === "string" &&
-    isUrl(media.audioUrl)
-  ) {
-    collected.audios.unshift(
-      media.audioUrl
-    );
-  }
-
-  if (
-    typeof media?.audio_url === "string" &&
-    isUrl(media.audio_url)
-  ) {
-    collected.audios.unshift(
-      media.audio_url
-    );
-  }
-
-  collected.videos =
-    unique(collected.videos);
-
-  collected.images =
-    unique(collected.images);
-
-  collected.audios =
-    unique(collected.audios);
-
-  if (
-    !collected.videos.length &&
-    !collected.images.length &&
-    !collected.audios.length
+    !videoUrl &&
+    !audioUrl &&
+    !uniqueImages.length
   ) {
     throw new Error(
-      "URL media tidak ditemukan dari downloader."
+      "Media tidak ditemukan dari API downloader."
     );
   }
 
   let type = "unknown";
 
-  if (collected.videos.length) {
+  if (
+    uniqueImages.length &&
+    !videoUrl &&
+    !audioUrl
+  ) {
+    type =
+      uniqueImages.length > 1
+        ? "carousel"
+        : "image";
+  } else if (videoUrl) {
     type = "video";
-  } else if (collected.images.length > 1) {
-    type = "carousel";
-  } else if (collected.images.length === 1) {
-    type = "image";
-  } else if (collected.audios.length) {
+  } else if (audioUrl) {
     type = "audio";
   }
 
@@ -775,250 +662,121 @@ async function downloadInfo(url) {
     type,
     title,
     thumbnail,
-    videos: collected.videos,
-    images: collected.images,
-    audios: collected.audios
-  };
-}
-
-async function fetchBuffer(url, maxSize) {
-  const response = await fetch(url, {
-    redirect: "follow",
-    headers: {
-      "User-Agent": "Mozilla/5.0"
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `CDN error ${response.status}`
-    );
-  }
-
-  const contentType =
-    response.headers.get("content-type") ||
-    "application/octet-stream";
-
-  const contentLength =
-    response.headers.get("content-length");
-
-  if (
-    contentLength &&
-    Number(contentLength) > maxSize
-  ) {
-    throw new Error(
-      "File terlalu besar untuk Telegram."
-    );
-  }
-
-  const arrayBuffer =
-    await response.arrayBuffer();
-
-  const buffer =
-    Buffer.from(arrayBuffer);
-
-  if (buffer.length > maxSize) {
-    throw new Error(
-      "File terlalu besar untuk Telegram."
-    );
-  }
-
-  return {
-    buffer,
-    contentType
+    videoUrl,
+    audioUrl,
+    images: uniqueImages
   };
 }
 
 async function sendVideo(
   chatId,
-  buffer,
-  contentType,
+  videoUrl,
   title,
   platform
 ) {
-  const form = new FormData();
-
-  form.append(
-    "chat_id",
-    String(chatId)
+  return await telegram(
+    "sendVideo",
+    {
+      chat_id: chatId,
+      video: videoUrl,
+      supports_streaming: true,
+      caption:
+        `🎬 ${title}\n\n` +
+        `Sumber: ${platform}\n` +
+        `☁️ Cloupanz`
+    }
   );
-
-  form.append(
-    "supports_streaming",
-    "true"
-  );
-
-  form.append(
-    "caption",
-`🎬 ${title}
-
-Sumber: ${platform}
-☁️ Cloupanz`
-  );
-
-  form.append(
-    "video",
-    new Blob(
-      [buffer],
-      {
-        type: contentType
-      }
-    ),
-    "cloupanz.mp4"
-  );
-
-  const response =
-    await fetch(
-      `${TELEGRAM_API}/sendVideo`,
-      {
-        method: "POST",
-        body: form
-      }
-    );
-
-  return await response.json();
-}
-
-async function sendPhoto(
-  chatId,
-  buffer,
-  contentType,
-  title,
-  platform
-) {
-  const form = new FormData();
-
-  form.append(
-    "chat_id",
-    String(chatId)
-  );
-
-  form.append(
-    "caption",
-`🖼️ ${title}
-
-Sumber: ${platform}
-☁️ Cloupanz`
-  );
-
-  const extension =
-    contentType.includes("png")
-      ? "png"
-      : contentType.includes("webp")
-        ? "webp"
-        : "jpg";
-
-  form.append(
-    "photo",
-    new Blob(
-      [buffer],
-      {
-        type: contentType
-      }
-    ),
-    `cloupanz.${extension}`
-  );
-
-  const response =
-    await fetch(
-      `${TELEGRAM_API}/sendPhoto`,
-      {
-        method: "POST",
-        body: form
-      }
-    );
-
-  return await response.json();
-}
-
-async function sendDocument(
-  chatId,
-  buffer,
-  contentType,
-  title,
-  platform
-) {
-  const form = new FormData();
-
-  form.append(
-    "chat_id",
-    String(chatId)
-  );
-
-  form.append(
-    "caption",
-`🖼️ ${title}
-
-Sumber: ${platform}
-☁️ Cloupanz`
-  );
-
-  form.append(
-    "document",
-    new Blob(
-      [buffer],
-      {
-        type: contentType
-      }
-    ),
-    "cloupanz-media"
-  );
-
-  const response =
-    await fetch(
-      `${TELEGRAM_API}/sendDocument`,
-      {
-        method: "POST",
-        body: form
-      }
-    );
-
-  return await response.json();
 }
 
 async function sendAudio(
   chatId,
-  buffer,
-  contentType,
+  audioUrl,
   title,
   platform
 ) {
-  const form = new FormData();
-
-  form.append(
-    "chat_id",
-    String(chatId)
+  return await telegram(
+    "sendAudio",
+    {
+      chat_id: chatId,
+      audio: audioUrl,
+      title: title,
+      caption:
+        `🎵 ${title}\n\n` +
+        `Sumber: ${platform}\n` +
+        `☁️ Cloupanz`
+    }
   );
+}
 
-  form.append(
-    "caption",
-`🎵 ${title}
-
-Sumber: ${platform}
-☁️ Cloupanz`
+async function sendSinglePhoto(
+  chatId,
+  imageUrl,
+  title,
+  platform
+) {
+  return await telegram(
+    "sendPhoto",
+    {
+      chat_id: chatId,
+      photo: imageUrl,
+      caption:
+        `🖼️ ${title}\n\n` +
+        `Sumber: ${platform}\n` +
+        `☁️ Cloupanz`
+    }
   );
+}
 
-  form.append(
-    "audio",
-    new Blob(
-      [buffer],
-      {
-        type: contentType
-      }
-    ),
-    "cloupanz-audio"
-  );
+async function sendPhotoGroup(
+  chatId,
+  images,
+  title,
+  platform
+) {
+  const chunks = [];
 
-  const response =
-    await fetch(
-      `${TELEGRAM_API}/sendAudio`,
-      {
-        method: "POST",
-        body: form
-      }
+  for (let i = 0; i < images.length; i += 10) {
+    chunks.push(
+      images.slice(i, i + 10)
+    );
+  }
+
+  const results = [];
+
+  for (const chunk of chunks) {
+    const media = chunk.map(
+      (image, index) => ({
+        type: "photo",
+        media: image,
+        caption:
+          index === 0
+            ? `🖼️ ${title}\n\n` +
+              `Sumber: ${platform}\n` +
+              `☁️ Cloupanz`
+            : undefined
+      })
     );
 
-  return await response.json();
+    const result =
+      await telegram(
+        "sendMediaGroup",
+        {
+          chat_id: chatId,
+          media
+        }
+      );
+
+    results.push(result);
+
+    if (!result?.ok) {
+      throw new Error(
+        result?.description ||
+        "Telegram gagal mengirim foto."
+      );
+    }
+  }
+
+  return results;
 }
 
 async function sendMedia(
@@ -1026,114 +784,63 @@ async function sendMedia(
   info,
   platform
 ) {
-  let sent = 0;
-
-  if (info.videos.length) {
-    for (const videoUrl of info.videos) {
-      const media =
-        await fetchBuffer(
-          videoUrl,
-          49 * 1024 * 1024
-        );
-
-      const result =
-        await sendVideo(
-          chatId,
-          media.buffer,
-          media.contentType,
-          info.title,
-          platform
-        );
-
-      if (!result?.ok) {
-        throw new Error(
-          result?.description ||
-          "Telegram gagal mengirim video."
-        );
-      }
-
-      sent++;
-    }
-  }
-
-  if (info.images.length) {
-    for (const imageUrl of info.images) {
-      const media =
-        await fetchBuffer(
-          imageUrl,
-          10 * 1024 * 1024
-        );
-
-      let result =
-        await sendPhoto(
-          chatId,
-          media.buffer,
-          media.contentType,
-          info.title,
-          platform
-        );
-
-      if (!result?.ok) {
-        result =
-          await sendDocument(
-            chatId,
-            media.buffer,
-            media.contentType,
-            info.title,
-            platform
-          );
-      }
-
-      if (!result?.ok) {
-        throw new Error(
-          result?.description ||
-          "Telegram gagal mengirim foto."
-        );
-      }
-
-      sent++;
-    }
-  }
-
-  if (
-    !info.videos.length &&
-    !info.images.length &&
-    info.audios.length
-  ) {
-    for (const audioUrl of info.audios) {
-      const media =
-        await fetchBuffer(
-          audioUrl,
-          49 * 1024 * 1024
-        );
-
-      const result =
-        await sendAudio(
-          chatId,
-          media.buffer,
-          media.contentType,
-          info.title,
-          platform
-        );
-
-      if (!result?.ok) {
-        throw new Error(
-          result?.description ||
-          "Telegram gagal mengirim audio."
-        );
-      }
-
-      sent++;
-    }
-  }
-
-  if (!sent) {
-    throw new Error(
-      "Tidak ada media yang berhasil dikirim."
+  if (info.type === "video") {
+    return await sendVideo(
+      chatId,
+      info.videoUrl,
+      info.title,
+      platform
     );
   }
 
-  return sent;
+  if (info.type === "audio") {
+    return await sendAudio(
+      chatId,
+      info.audioUrl,
+      info.title,
+      platform
+    );
+  }
+
+  if (info.type === "image") {
+    return await sendSinglePhoto(
+      chatId,
+      info.images[0],
+      info.title,
+      platform
+    );
+  }
+
+  if (info.type === "carousel") {
+    return await sendPhotoGroup(
+      chatId,
+      info.images,
+      info.title,
+      platform
+    );
+  }
+
+  if (info.images?.length) {
+    if (info.images.length === 1) {
+      return await sendSinglePhoto(
+        chatId,
+        info.images[0],
+        info.title,
+        platform
+      );
+    }
+
+    return await sendPhotoGroup(
+      chatId,
+      info.images,
+      info.title,
+      platform
+    );
+  }
+
+  throw new Error(
+    "Jenis media tidak didukung."
+  );
 }
 
 export default async function handler(
@@ -1147,9 +854,7 @@ export default async function handler(
       status: "online",
       platforms: [
         "TikTok",
-        "Instagram",
-        "YouTube",
-        "Facebook"
+        "Instagram"
       ]
     });
   }
@@ -1190,18 +895,18 @@ export default async function handler(
           text:
 `Halo ${user?.first_name || "kak"} 👋
 
-Kirim link video, foto, carousel, atau audio.
+Kirim link TikTok atau Instagram.
 
-📌 Limit harian: ${DAILY_LIMIT} media
+Bisa mengambil:
+🎬 Video
+🖼️ Foto
+🖼️ Carousel
+🎵 Audio
 
-Bisa:
-• TikTok
-• Instagram
-• YouTube
-• Facebook
+📌 Limit harian: ${DAILY_LIMIT}
 
-/limit untuk cek sisa limit
-/help untuk bantuan`
+/help untuk bantuan
+/limit untuk melihat limit`
         }
       );
 
@@ -1218,23 +923,18 @@ Bisa:
           text:
 `📖 Cara pakai
 
-1. Salin link media
+1. Salin link TikTok atau Instagram
 2. Kirim ke bot
 3. Tunggu sebentar
-4. Media langsung dikirim
+4. Media akan dikirim otomatis
 
+Media yang didukung:
 🎬 Video
 🖼️ Foto
-📚 Carousel
+🖼️ Carousel
 🎵 Audio
 
-Platform:
-• TikTok
-• Instagram
-• YouTube
-• Facebook
-
-/limit — cek sisa limit`
+/limit — cek limit`
         }
       );
 
@@ -1284,9 +984,13 @@ ${status.remaining} download`
       });
     }
 
-    if (text.startsWith("/admin ")) {
+    if (
+      text.startsWith("/admin ")
+    ) {
       const pin =
-        text.slice(7).trim();
+        text
+          .slice(7)
+          .trim();
 
       const adminUser = {
         ...user,
@@ -1354,9 +1058,10 @@ tanpa limit.`
       let totalDownloads = 0;
 
       for (const item of users) {
-        totalDownloads += Number(
-          item?.fields?.downloads?.integerValue || 0
-        );
+        totalDownloads +=
+          Number(
+            item?.fields?.downloads?.integerValue || 0
+          );
       }
 
       await telegram(
@@ -1369,7 +1074,7 @@ tanpa limit.`
 👥 Users:
 ${users.length}
 
-📥 Total Download:
+🎬 Download:
 ${totalDownloads}
 
 👑 Admin:
@@ -1394,7 +1099,7 @@ Aktif`
         {
           chat_id: chatId,
           text:
-            "Kirim link media yang valid ya 🙂"
+            "Kirim link TikTok atau Instagram ya 🙂"
         }
       );
 
@@ -1416,9 +1121,7 @@ Aktif`
 
 Saat ini:
 🎵 TikTok
-📸 Instagram
-▶️ YouTube
-📘 Facebook`
+📸 Instagram`
         }
       );
 
@@ -1442,9 +1145,8 @@ Saat ini:
           chat_id: chatId,
           text:
 `Limit hari ini sudah habis 😅
-
 Batas:
-${DAILY_LIMIT} media/hari
+${DAILY_LIMIT} download/hari
 
 Coba lagi besok.`
         }
@@ -1455,16 +1157,17 @@ Coba lagi besok.`
       });
     }
 
-    await telegram(
-      "sendMessage",
-      {
-        chat_id: chatId,
-        text:
+    const processing =
+      await telegram(
+        "sendMessage",
+        {
+          chat_id: chatId,
+          text:
 `⏳ Tunggu sebentar...
 
 🔎 Mengambil media ${platform}...`
-      }
-    );
+        }
+      );
 
     try {
       const info =
@@ -1480,14 +1183,22 @@ Coba lagi besok.`
         await addDownload(user);
       }
 
+      if (processing?.result?.message_id) {
+        await telegram(
+          "deleteMessage",
+          {
+            chat_id: chatId,
+            message_id:
+              processing.result.message_id
+          }
+        ).catch(() => {});
+      }
+
       return res.status(200).json({
         ok: true,
         type: info.type,
-        images: info.images.length,
-        videos: info.videos.length,
-        audios: info.audios.length
+        count: info.images?.length || 0
       });
-
     } catch (error) {
       console.error(
         "DOWNLOAD ERROR:",
@@ -1499,9 +1210,8 @@ Coba lagi besok.`
         {
           chat_id: chatId,
           text:
-`❌ Gagal mengambil media.
-
-${error?.message || "Terjadi kesalahan."}`
+            `❌ Gagal mengambil media.\n\n` +
+            `${error?.message || "Terjadi kesalahan."}`
         }
       );
 
@@ -1510,7 +1220,6 @@ ${error?.message || "Terjadi kesalahan."}`
         error: true
       });
     }
-
   } catch (error) {
     console.error(
       "WEBHOOK ERROR:",
@@ -1521,7 +1230,7 @@ ${error?.message || "Terjadi kesalahan."}`
       ok: false,
       error:
         error?.message ||
-        "Internal server error"
+        "Webhook error."
     });
   }
 }
