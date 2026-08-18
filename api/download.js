@@ -3,7 +3,9 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
 
   if (req.method === "GET") {
     return res.status(200).json({
@@ -41,11 +43,7 @@ export default async function handler(req, res) {
     }
 
     try {
-      const parsed = new URL(url);
-
-      if (!["http:", "https:"].includes(parsed.protocol)) {
-        throw new Error();
-      }
+      new URL(url);
     } catch {
       return res.status(400).json({
         success: false,
@@ -133,6 +131,42 @@ export default async function handler(req, res) {
 
     const images = [];
 
+    const addImage = value => {
+      if (!value || typeof value !== "string") return;
+
+      try {
+        const parsed = new URL(value);
+
+        if (
+          parsed.protocol === "http:" ||
+          parsed.protocol === "https:"
+        ) {
+          images.push(value);
+        }
+      } catch {}
+    };
+
+    const addImageObject = item => {
+      if (!item) return;
+
+      if (typeof item === "string") {
+        addImage(item);
+        return;
+      }
+
+      if (typeof item !== "object") return;
+
+      addImage(
+        item.url ||
+        item.imageUrl ||
+        item.image_url ||
+        item.downloadUrl ||
+        item.download_url ||
+        item.src ||
+        item.source
+      );
+    };
+
     const imageSources = [
       root?.images,
       root?.imageUrls,
@@ -141,68 +175,106 @@ export default async function handler(req, res) {
       root?.photoUrls,
       root?.photo_urls,
       root?.media,
+      root?.items,
+      root?.slides,
+      root?.carousel,
+      root?.carouselMedia,
+      root?.carousel_media,
+      root?.resources,
       data?.images,
       data?.photos,
-      data?.media
+      data?.media,
+      data?.items
     ];
 
     for (const source of imageSources) {
-      if (!Array.isArray(source)) continue;
+      if (Array.isArray(source)) {
+        for (const item of source) {
+          addImageObject(item);
+        }
+      }
+    }
 
-      for (const item of source) {
-        if (typeof item === "string") {
-          images.push(item);
-          continue;
+    addImage(root?.image);
+    addImage(root?.imageUrl);
+    addImage(root?.image_url);
+    addImage(root?.photo);
+    addImage(root?.photoUrl);
+    addImage(root?.photo_url);
+    addImage(data?.image);
+    addImage(data?.imageUrl);
+    addImage(data?.image_url);
+
+    const walk = (value, depth = 0) => {
+      if (!value || depth > 5) return;
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          walk(item, depth + 1);
+        }
+        return;
+      }
+
+      if (typeof value !== "object") return;
+
+      for (const [key, item] of Object.entries(value)) {
+        const lower = key.toLowerCase();
+
+        if (
+          typeof item === "string" &&
+          (
+            lower.includes("image") ||
+            lower.includes("photo") ||
+            lower === "src"
+          )
+        ) {
+          addImage(item);
         }
 
-        if (!item || typeof item !== "object") continue;
+        if (
+          Array.isArray(item) &&
+          (
+            lower.includes("image") ||
+            lower.includes("photo") ||
+            lower.includes("media") ||
+            lower.includes("carousel") ||
+            lower.includes("slide")
+          )
+        ) {
+          for (const entry of item) {
+            addImageObject(entry);
+            walk(entry, depth + 1);
+          }
+        }
 
-        const image =
-          item.url ||
-          item.imageUrl ||
-          item.image_url ||
-          item.downloadUrl ||
-          item.download_url ||
-          item.src;
-
-        if (image) images.push(image);
+        if (item && typeof item === "object") {
+          walk(item, depth + 1);
+        }
       }
-    }
+    };
 
-    const singleImages = [
-      root?.image,
-      root?.imageUrl,
-      root?.image_url,
-      data?.image,
-      data?.imageUrl,
-      data?.image_url
-    ];
+    walk(root);
+    walk(data);
 
-    for (const image of singleImages) {
-      if (typeof image === "string" && image) {
-        images.push(image);
-      }
-    }
+    const uniqueImages = [...new Set(images)];
 
-    if (!videoUrl && root?.url && root?.type === "video") {
+    if (
+      !videoUrl &&
+      root?.url &&
+      String(root?.type || "").toLowerCase() === "video"
+    ) {
       videoUrl = root.url;
     }
 
-    if (!audioUrl && root?.url && root?.type === "audio") {
+    if (
+      !audioUrl &&
+      root?.url &&
+      String(root?.type || "").toLowerCase() === "audio"
+    ) {
       audioUrl = root.url;
     }
 
-    const cleanImages = [
-      ...new Set(
-        images.filter(
-          item =>
-            typeof item === "string" &&
-            /^https?:\/\//i.test(item)
-        )
-      )
-    ];
-
-    if (!videoUrl && !audioUrl && !cleanImages.length) {
+    if (!videoUrl && !audioUrl && !uniqueImages.length) {
       return res.status(502).json({
         success: false,
         message: "Media tidak ditemukan dari API downloader."
@@ -211,8 +283,8 @@ export default async function handler(req, res) {
 
     let type = "unknown";
 
-    if (cleanImages.length && !videoUrl && !audioUrl) {
-      type = cleanImages.length > 1 ? "carousel" : "image";
+    if (uniqueImages.length && !videoUrl && !audioUrl) {
+      type = uniqueImages.length > 1 ? "carousel" : "image";
     } else if (videoUrl) {
       type = "video";
     } else if (audioUrl) {
@@ -226,8 +298,8 @@ export default async function handler(req, res) {
       thumbnail,
       video_url: videoUrl,
       audio_url: audioUrl,
-      images: cleanImages,
-      count: cleanImages.length
+      images: uniqueImages,
+      count: uniqueImages.length
     });
   } catch (error) {
     if (error?.name === "AbortError") {
@@ -241,7 +313,7 @@ export default async function handler(req, res) {
       success: false,
       message:
         error?.message ||
-        "Terjadi kesalahan server."
+        "Terjadi kesalahan pada server."
     });
   }
 }
