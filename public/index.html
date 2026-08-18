@@ -8,405 +8,73 @@
 <title>Cloupanz — Download Media</title>
 
 <style>
-*{
-box-sizing:border-box;
-margin:0;
-padding:0
-}
-
-html{
-scroll-behavior:smooth
-}
-
-body{
-min-height:100vh;
-font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-color:#fff;
-background:
-radial-gradient(circle at 50% -10%,#32115b 0%,#170b27 35%,#08070d 72%)
-}
-
-button,input{
-font:inherit
-}
-
-a{
-color:inherit;
-text-decoration:none
-}
-
-.container{
-width:min(1180px,calc(100% - 32px));
-margin:auto
-}
-
-.navbar{
-height:82px;
-display:flex;
-align-items:center;
-justify-content:space-between;
-border-bottom:1px solid rgba(255,255,255,.06)
-}
-
-.brand{
-display:flex;
-align-items:center;
-gap:14px;
-font-size:25px;
-font-weight:800
-}
-
-.logo{
-width:46px;
-height:46px;
-border-radius:14px;
-display:grid;
-place-items:center;
-font-size:27px;
-background:linear-gradient(145deg,#aa5cff,#7227df);
-box-shadow:0 10px 35px rgba(140,55,255,.35)
-}
-
-.admin{
-color:#aaa3b8;
-font-size:16px
-}
-
-.hero{
-text-align:center;
-padding:75px 0 35px
-}
-
-.badge{
-display:inline-flex;
-align-items:center;
-gap:8px;
-padding:10px 17px;
-border:1px solid rgba(177,99,255,.25);
-border-radius:999px;
-background:rgba(123,43,208,.12);
-color:#d2b4ff
-}
-
-.dot{
-width:10px;
-height:10px;
-border-radius:50%;
-background:#46e98b;
-box-shadow:0 0 12px #46e98b
-}
-
-.hero h1{
-margin:28px auto 18px;
-max-width:850px;
-font-size:clamp(44px,7vw,76px);
-line-height:1.02;
-letter-spacing:-3px
-}
-
-.gradient{
-background:linear-gradient(90deg,#fff,#b56aff,#8737f2);
--webkit-background-clip:text;
-background-clip:text;
-color:transparent
-}
-
-.hero p{
-max-width:720px;
-margin:auto;
-color:#aaa5b3;
-font-size:19px;
-line-height:1.7
-}
-
-.download-box{
-width:min(850px,100%);
-margin:40px auto 0;
-padding:12px;
-border:1px solid rgba(255,255,255,.09);
-border-radius:25px;
-background:rgba(17,14,24,.86);
-box-shadow:0 25px 70px rgba(0,0,0,.3)
-}
-
-.form{
-display:flex;
-gap:10px
-}
-
-.input-wrap{
-flex:1
-}
-
-input{
-width:100%;
-height:62px;
-padding:0 20px;
-border:1px solid rgba(255,255,255,.08);
-outline:none;
-border-radius:17px;
-background:#0b0910;
-color:#fff;
-font-size:16px
-}
-
-input:focus{
-border-color:#9748ff;
-box-shadow:0 0 0 3px rgba(151,72,255,.1)
-}
-
-input::placeholder{
-color:#68636e
-}
-
-.download-btn{
-min-width:175px;
-height:62px;
-border:0;
-border-radius:17px;
-cursor:pointer;
-color:#fff;
-font-weight:800;
-background:linear-gradient(135deg,#a94fff,#7028dd);
-box-shadow:0 12px 30px rgba(126,44,230,.25)
-}
-
-.download-btn:disabled{
-opacity:.6;
-cursor:not-allowed
-}
-
-.platforms{
-display:flex;
-justify-content:center;
-gap:10px;
-padding:15px 5px 4px;
-flex-wrap:wrap
-}
-
-.platform{
-color:#817b89;
-padding:7px 13px;
-font-size:14px
-}
-
-.result{
-margin:24px auto 0;
-width:min(850px,100%)
-}
-
-.status{
-display:none;
-padding:16px 18px;
-border-radius:15px;
-text-align:center;
-line-height:1.5
-}
-
-.status.show{
-display:block
-}
-
-.status.loading{
-color:#d7c2ff;
-background:rgba(123,43,208,.12);
-border:1px solid rgba(150,74,255,.2)
-}
-
-.status.success{
-color:#69e99d;
-background:rgba(50,220,130,.08);
-border:1px solid rgba(50,220,130,.15)
-}
-
-.status.error{
-color:#ff8d9d;
-background:rgba(255,60,90,.07);
-border:1px solid rgba(255,60,90,.16)
-}
-
-.media-list{
-display:grid;
-gap:20px;
-margin-top:20px
-}
-
-.media-card{
-overflow:hidden;
-border:1px solid rgba(255,255,255,.08);
-border-radius:22px;
-background:#100e16
-}
-
-.media-preview{
-width:100%;
-max-height:700px;
-display:block;
-object-fit:contain;
-background:#050407
-}
-
-.image-grid{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:3px;
-background:#050407
-}
-
-.image-grid img{
-width:100%;
-height:320px;
-display:block;
-object-fit:cover
-}
-
-.media-info{
-padding:18px
-}
-
-.media-title{
-font-size:20px;
-font-weight:800;
-margin-bottom:8px;
-word-break:break-word
-}
-
-.media-type{
-color:#aaa2b3;
-font-size:13px;
-margin-bottom:14px
-}
-
-.media-actions{
-display:flex;
-gap:10px
-}
-
-.media-actions a{
-flex:1;
-min-height:48px;
-display:flex;
-align-items:center;
-justify-content:center;
-border-radius:13px;
-background:linear-gradient(135deg,#a94fff,#7028dd);
-font-weight:700
-}
-
-.media-actions a.secondary{
-background:#1a1721;
-border:1px solid rgba(255,255,255,.08)
-}
-
-.audio-box{
-padding:20px;
-background:#0b0910
-}
-
-.audio-box audio{
-width:100%
-}
-
-.audio-label{
-font-weight:800;
-margin-bottom:12px
-}
-
-.features{
-padding:50px 0 90px;
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:18px
-}
-
-.feature{
-min-height:210px;
-padding:28px;
-border:1px solid rgba(255,255,255,.07);
-border-radius:24px;
-background:rgba(16,14,22,.78)
-}
-
-.feature-icon{
-font-size:38px;
-margin-bottom:24px
-}
-
-.feature h2{
-font-size:22px;
-margin-bottom:10px
-}
-
-.feature p{
-color:#918b98;
-line-height:1.7
-}
-
-.footer{
-padding:30px 0;
-border-top:1px solid rgba(255,255,255,.06);
-color:#68636e;
-text-align:center;
-font-size:14px
-}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{min-height:100vh;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;background:radial-gradient(circle at 50% -10%,#32115b 0%,#170b27 35%,#08070d 72%)}
+button,input{font:inherit}
+a{color:inherit;text-decoration:none}
+.container{width:min(1180px,calc(100% - 32px));margin:auto}
+.navbar{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)}
+.brand{display:flex;align-items:center;gap:14px;font-size:25px;font-weight:800}
+.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:27px;background:linear-gradient(145deg,#aa5cff,#7227df);box-shadow:0 10px 35px rgba(140,55,255,.35)}
+.admin{color:#aaa3b8;font-size:16px}
+.hero{text-align:center;padding:75px 0 35px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:10px 17px;border:1px solid rgba(177,99,255,.25);border-radius:999px;background:rgba(123,43,208,.12);color:#d2b4ff}
+.dot{width:10px;height:10px;border-radius:50%;background:#46e98b;box-shadow:0 0 12px #46e98b}
+.hero h1{margin:28px auto 18px;max-width:850px;font-size:clamp(44px,7vw,76px);line-height:1.02;letter-spacing:-3px}
+.gradient{background:linear-gradient(90deg,#fff,#b56aff,#8737f2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{max-width:720px;margin:auto;color:#aaa5b3;font-size:19px;line-height:1.7}
+.download-box{width:min(850px,100%);margin:40px auto 0;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:25px;background:rgba(17,14,24,.86);box-shadow:0 25px 70px rgba(0,0,0,.3)}
+.form{display:flex;gap:10px}
+.input-wrap{flex:1}
+input{width:100%;height:62px;padding:0 20px;border:1px solid rgba(255,255,255,.08);outline:none;border-radius:17px;background:#0b0910;color:#fff;font-size:16px}
+input:focus{border-color:#9748ff;box-shadow:0 0 0 3px rgba(151,72,255,.1)}
+input::placeholder{color:#68636e}
+.download-btn{min-width:175px;height:62px;border:0;border-radius:17px;cursor:pointer;color:#fff;font-weight:800;background:linear-gradient(135deg,#a94fff,#7028dd);box-shadow:0 12px 30px rgba(126,44,230,.25)}
+.download-btn:disabled{opacity:.6;cursor:not-allowed}
+.platforms{display:flex;justify-content:center;gap:10px;padding:15px 5px 4px;flex-wrap:wrap}
+.platform{color:#817b89;padding:7px 13px;font-size:14px}
+.result{margin:24px auto 0;width:min(850px,100%)}
+.status{display:none;padding:16px 18px;border-radius:15px;text-align:center;line-height:1.5}
+.status.show{display:block}
+.status.loading{color:#d7c2ff;background:rgba(123,43,208,.12);border:1px solid rgba(150,74,255,.2)}
+.status.success{color:#69e99d;background:rgba(50,220,130,.08);border:1px solid rgba(50,220,130,.15)}
+.status.error{color:#ff8d9d;background:rgba(255,60,90,.07);border:1px solid rgba(255,60,90,.16)}
+.media-list{display:grid;gap:20px;margin-top:20px}
+.media-card{overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:#100e16}
+.media-preview{width:100%;max-height:700px;display:block;object-fit:contain;background:#050407}
+.image-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;background:#050407}
+.image-grid img{width:100%;height:320px;display:block;object-fit:cover}
+.media-info{padding:18px}
+.media-title{font-size:20px;font-weight:800;margin-bottom:8px;word-break:break-word}
+.media-type{color:#aaa2b3;font-size:13px;margin-bottom:14px}
+.media-actions{display:flex;gap:10px}
+.media-actions button{flex:1;min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,#a94fff,#7028dd);font-weight:700;color:#fff;border:0;cursor:pointer}
+.media-actions button.secondary{background:#1a1721;border:1px solid rgba(255,255,255,.08)}
+.audio-box{padding:20px;background:#0b0910}
+.audio-box audio{width:100%}
+.audio-label{font-weight:800;margin-bottom:12px}
+.features{padding:50px 0 90px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.feature{min-height:210px;padding:28px;border:1px solid rgba(255,255,255,.07);border-radius:24px;background:rgba(16,14,22,.78)}
+.feature-icon{font-size:38px;margin-bottom:24px}
+.feature h2{font-size:22px;margin-bottom:10px}
+.feature p{color:#918b98;line-height:1.7}
+.footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#68636e;text-align:center;font-size:14px}
 
 @media(max-width:700px){
-
-.navbar{
-height:72px
-}
-
-.brand{
-font-size:21px
-}
-
-.logo{
-width:42px;
-height:42px;
-font-size:24px
-}
-
-.hero{
-padding:60px 0 30px
-}
-
-.hero h1{
-font-size:47px;
-letter-spacing:-2px
-}
-
-.hero p{
-font-size:16px
-}
-
-.form{
-flex-direction:column
-}
-
-.download-btn{
-width:100%
-}
-
-.features{
-grid-template-columns:1fr;
-padding-top:30px
-}
-
-.feature{
-min-height:auto
-}
-
-.image-grid{
-grid-template-columns:2fr 2fr
-}
-
-.image-grid img{
-height:210px
-}
-
-.media-actions{
-flex-direction:column
-}
+.navbar{height:72px}
+.brand{font-size:21px}
+.logo{width:42px;height:42px;font-size:24px}
+.hero{padding:60px 0 30px}
+.hero h1{font-size:47px;letter-spacing:-2px}
+.hero p{font-size:16px}
+.form{flex-direction:column}
+.download-btn{width:100%}
+.features{grid-template-columns:1fr;padding-top:30px}
+.feature{min-height:auto}
+.image-grid{grid-template-columns:2fr 2fr}
+.image-grid img{height:210px}
+.media-actions{flex-direction:column}
 }
 </style>
 </head>
@@ -419,9 +87,7 @@ flex-direction:column
 <span>Cloupanz</span>
 </a>
 
-<a class="admin" href="/admin.html">
-Admin
-</a>
+<a class="admin" href="/admin.html">Admin</a>
 </header>
 
 <main>
@@ -473,15 +139,9 @@ Download
 
 <div class="result">
 
-<div
-class="status"
-id="status">
-</div>
+<div class="status" id="status"></div>
 
-<div
-class="media-list"
-id="mediaList">
-</div>
+<div class="media-list" id="mediaList"></div>
 
 </div>
 
@@ -523,27 +183,15 @@ Media foto TikTok yang mempunyai musik dapat menampilkan audio secara terpisah.
 </footer>
 
 <script>
-const form =
-document.getElementById("downloadForm");
-
-const input =
-document.getElementById("urlInput");
-
-const button =
-document.getElementById("downloadBtn");
-
-const statusBox =
-document.getElementById("status");
-
-const mediaList =
-document.getElementById("mediaList");
+const form=document.getElementById("downloadForm");
+const input=document.getElementById("urlInput");
+const button=document.getElementById("downloadBtn");
+const statusBox=document.getElementById("status");
+const mediaList=document.getElementById("mediaList");
 
 function status(message,type="loading"){
-statusBox.className =
-`status show ${type}`;
-
-statusBox.textContent =
-message;
+statusBox.className=`status show ${type}`;
+statusBox.textContent=message;
 }
 
 function clearResult(){
@@ -555,8 +203,7 @@ mediaList.innerHTML="";
 function validUrl(url){
 try{
 const u=new URL(url);
-return u.protocol==="http:" ||
-u.protocol==="https:";
+return u.protocol==="http:"||u.protocol==="https:";
 }catch{
 return false;
 }
@@ -565,111 +212,57 @@ return false;
 function safeUrl(url){
 try{
 const u=new URL(url);
-
-if(
-u.protocol!=="http:" &&
-u.protocol!=="https:"
-){
-return "";
-}
-
+if(u.protocol!=="http:"&&u.protocol!=="https:")return "";
 return u.href;
 }catch{
 return "";
 }
 }
 
-function typeFromUrl(url){
-const value=
-String(url||"")
-.toLowerCase()
-.split("?")[0];
-
-if(
-/\.(jpg|jpeg|png|gif|webp|avif)$/i
-.test(value)
-){
-return "image";
-}
-
-if(
-/\.(mp3|m4a|aac|ogg|wav|flac)$/i
-.test(value)
-){
-return "audio";
-}
-
-if(
-/\.(mp4|webm|mov|mkv|m4v)$/i
-.test(value)
-){
-return "video";
-}
-
-return "";
-}
-
 function normalizeResponse(data){
 
-const type=
-String(data.type||"")
-.toLowerCase();
+const type=String(data.type||"").toLowerCase();
 
-const videoUrl=
-safeUrl(
-data.video_url ||
-data.videoUrl ||
+const videoUrl=safeUrl(
+data.video_url||
+data.videoUrl||
 ""
 );
 
-const audioUrl=
-safeUrl(
-data.audio_url ||
-data.audioUrl ||
+const audioUrl=safeUrl(
+data.audio_url||
+data.audioUrl||
 ""
 );
 
 const images=[
-...(Array.isArray(data.images)
-?data.images
-:[])
+...(Array.isArray(data.images)?data.images:[])
 ]
 .map(safeUrl)
 .filter(Boolean);
 
-if(
-type==="video" &&
-videoUrl
-){
+if(type==="video"&&videoUrl){
 return{
 type:"video",
 title:data.title||"Cloupanz Video",
 videoUrl,
-audioUrl,
 thumbnail:safeUrl(data.thumbnail||"")
 };
 }
 
 if(
-(type==="image" ||
-type==="carousel") &&
+(type==="image"||type==="carousel")&&
 images.length
 ){
 return{
-type:
-images.length>1
-?"carousel"
-:"image",
+type:images.length>1?"carousel":"image",
 title:data.title||"Cloupanz Foto",
 images,
 audioUrl
 };
 }
 
-if(
-type==="audio" &&
-audioUrl
-){
+if(type==="audio"&&audioUrl){
 return{
 type:"audio",
 title:data.title||"Cloupanz Audio",
@@ -682,17 +275,13 @@ return{
 type:"video",
 title:data.title||"Cloupanz Video",
 videoUrl,
-audioUrl,
 thumbnail:safeUrl(data.thumbnail||"")
 };
 }
 
 if(images.length){
 return{
-type:
-images.length>1
-?"carousel"
-:"image",
+type:images.length>1?"carousel":"image",
 title:data.title||"Cloupanz Foto",
 images,
 audioUrl
@@ -720,40 +309,100 @@ return String(value??"")
 }
 
 function downloadName(type,index=1){
-if(type==="video"){
-return `cloupanz-video-${index}.mp4`;
+if(type==="video")return`cloupanz-video-${index}.mp4`;
+if(type==="image")return`cloupanz-photo-${index}.jpg`;
+if(type==="audio")return`cloupanz-audio-${index}.mp3`;
+return`cloupanz-media-${index}`;
 }
 
-if(type==="image"){
-return `cloupanz-photo-${index}.jpg`;
+async function downloadMedia(url,fileName,buttonElement){
+
+const oldText=buttonElement.textContent;
+
+try{
+
+buttonElement.disabled=true;
+buttonElement.textContent="Mengunduh...";
+
+const response=await fetch(url);
+
+if(!response.ok){
+throw new Error(`HTTP ${response.status}`);
 }
 
-if(type==="audio"){
-return `cloupanz-audio-${index}.mp3`;
-}
+const blob=await response.blob();
 
-return `cloupanz-media-${index}`;
+const blobUrl=URL.createObjectURL(blob);
+
+const a=document.createElement("a");
+
+a.href=blobUrl;
+a.download=fileName;
+a.style.display="none";
+
+document.body.appendChild(a);
+a.click();
+a.remove();
+
+setTimeout(()=>{
+URL.revokeObjectURL(blobUrl);
+},10000);
+
+buttonElement.textContent="✓ Selesai";
+
+setTimeout(()=>{
+buttonElement.textContent=oldText;
+buttonElement.disabled=false;
+},1500);
+
+}catch(error){
+
+console.error(error);
+
+buttonElement.disabled=false;
+buttonElement.textContent=oldText;
+
+status(
+"Gagal download langsung. Coba lagi.",
+"error"
+);
+
+}
 }
 
 function button(url,label,file){
-return `
+
+const id=
+"download_"+Math.random()
+.toString(36)
+.substring(2,11);
+
+setTimeout(()=>{
+
+const element=document.getElementById(id);
+
+if(element){
+
+element.addEventListener("click",()=>{
+downloadMedia(
+url,
+file,
+element
+);
+});
+
+}
+
+},0);
+
+return`
 <div class="media-actions">
 
-<a
-href="${escapeHtml(url)}"
-target="_blank"
-rel="noopener">
-Buka
-</a>
-
-<a
-class="secondary"
-href="${escapeHtml(url)}"
-download="${escapeHtml(file)}"
-target="_blank"
-rel="noopener">
+<button
+type="button"
+id="${id}">
 ${label}
-</a>
+</button>
 
 </div>
 `;
@@ -761,8 +410,7 @@ ${label}
 
 function renderVideo(item){
 
-const card=
-document.createElement("div");
+const card=document.createElement("div");
 
 card.className="media-card";
 
@@ -773,12 +421,12 @@ class="media-preview"
 controls
 playsinline
 preload="metadata"
-${item.thumbnail
-?`poster="${escapeHtml(item.thumbnail)}"`
-:""}>
+${item.thumbnail?`poster="${escapeHtml(item.thumbnail)}"`:""}>
+
 <source
 src="${escapeHtml(item.videoUrl)}"
 type="video/mp4">
+
 </video>
 
 <div class="media-info">
@@ -805,83 +453,15 @@ mediaList.appendChild(card);
 
 function renderImages(item){
 
-const card=
-document.createElement("div");
-
-card.className="media-card";
-
-const images=
-item.images||[];
-
-let preview="";
-
-if(images.length===1){
-
-preview=`
-<img
-class="media-preview"
-src="${escapeHtml(images[0])}"
-alt="Foto"
-loading="lazy">
-`;
-
-}else{
-
-preview=`
-<div class="image-grid">
-
-${images.map(
-(url,index)=>`
-<img
-src="${escapeHtml(url)}"
-alt="Foto ${index+1}"
-loading="lazy">
-`
-).join("")}
-
-</div>
-`;
-}
-
-card.innerHTML=`
-
-${preview}
-
-<div class="media-info">
-
-<div class="media-type">
-🖼️ ${images.length>1
-?"Carousel"
-:"Foto"}
-</div>
-
-<div class="media-title">
-${escapeHtml(item.title)}
-</div>
-
-${button(
-images[0],
-images.length>1
-?"⬇️ Download Foto 1"
-:"⬇️ Download Foto",
-downloadName("image",1)
-)}
-
-</div>
-`;
-
-mediaList.appendChild(card);
+const images=item.images||[];
 
 images.forEach((url,index)=>{
 
-if(index===0)return;
+const card=document.createElement("div");
 
-const extra=
-document.createElement("div");
+card.className="media-card";
 
-extra.className="media-card";
-
-extra.innerHTML=`
+card.innerHTML=`
 
 <img
 class="media-preview"
@@ -895,6 +475,10 @@ loading="lazy">
 🖼️ Foto ${index+1}
 </div>
 
+<div class="media-title">
+${escapeHtml(item.title)}
+</div>
+
 ${button(
 url,
 `⬇️ Download Foto ${index+1}`,
@@ -904,14 +488,14 @@ downloadName("image",index+1)
 </div>
 `;
 
-mediaList.appendChild(extra);
+mediaList.appendChild(card);
+
 });
 }
 
 function renderAudio(item){
 
-const card=
-document.createElement("div");
+const card=document.createElement("div");
 
 card.className="media-card";
 
@@ -926,8 +510,10 @@ card.innerHTML=`
 <audio
 controls
 preload="metadata">
+
 <source
 src="${escapeHtml(item.audioUrl)}">
+
 </audio>
 
 </div>
@@ -955,14 +541,17 @@ function render(item){
 mediaList.innerHTML="";
 
 if(!item){
+
 status(
 "❌ Media tidak ditemukan.",
 "error"
 );
+
 return;
 }
 
 if(item.type==="video"){
+
 renderVideo(item);
 
 status(
@@ -974,7 +563,7 @@ return;
 }
 
 if(
-item.type==="image" ||
+item.type==="image"||
 item.type==="carousel"
 ){
 
@@ -998,6 +587,7 @@ return;
 }
 
 if(item.type==="audio"){
+
 renderAudio(item);
 
 status(
@@ -1014,20 +604,19 @@ status(
 );
 }
 
-form.addEventListener(
-"submit",
-async event=>{
+form.addEventListener("submit",async event=>{
 
 event.preventDefault();
 
-const url=
-input.value.trim();
+const url=input.value.trim();
 
 if(!validUrl(url)){
+
 status(
 "❌ Link tidak valid.",
 "error"
 );
+
 return;
 }
 
@@ -1042,54 +631,55 @@ status(
 
 try{
 
-const response=
-await fetch(
+const response=await fetch(
 "/api/download",
 {
 method:"POST",
 headers:{
-"Content-Type":
-"application/json",
-"Accept":
-"application/json"
+"Content-Type":"application/json",
+"Accept":"application/json"
 },
-body:JSON.stringify({
-url
-})
+body:JSON.stringify({url})
 }
 );
 
-const text=
-await response.text();
+const text=await response.text();
 
 let data;
 
 try{
+
 data=JSON.parse(text);
+
 }catch{
+
 throw new Error(
 "Server mengirim response bukan JSON."
 );
+
 }
 
 if(!response.ok){
+
 throw new Error(
-data?.message ||
-data?.error ||
+data?.message||
+data?.error||
 `Server error ${response.status}`
 );
+
 }
 
 if(data.success===false){
+
 throw new Error(
-data.message ||
-data.error ||
+data.message||
+data.error||
 "Media gagal diambil."
 );
+
 }
 
-const result=
-normalizeResponse(data);
+const result=normalizeResponse(data);
 
 render(result);
 
@@ -1098,8 +688,7 @@ render(result);
 mediaList.innerHTML="";
 
 status(
-`❌ ${error.message ||
-"Gagal mengambil media."}`,
+`❌ ${error.message||"Gagal mengambil media."}`,
 "error"
 );
 
@@ -1108,9 +697,12 @@ status(
 button.disabled=false;
 button.textContent="Download";
 
+input.value=url;
+
 }
 
 });
+
 </script>
 
 </body>
