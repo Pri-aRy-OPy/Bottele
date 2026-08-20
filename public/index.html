@@ -43,13 +43,12 @@ input::placeholder{color:#68636e}
 .media-list{display:grid;gap:20px;margin-top:20px}
 .media-card{overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:#100e16}
 .media-preview{width:100%;max-height:700px;display:block;object-fit:contain;background:#050407}
-.image-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;background:#050407}
-.image-grid img{width:100%;height:320px;display:block;object-fit:cover}
 .media-info{padding:18px}
 .media-title{font-size:20px;font-weight:800;margin-bottom:8px;word-break:break-word}
 .media-type{color:#aaa2b3;font-size:13px;margin-bottom:14px}
 .media-actions{display:flex;gap:10px}
-.media-actions button{flex:1;min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,#a94fff,#7028dd);font-weight:700;color:#fff;border:0;cursor:pointer}
+.media-actions button{flex:1;min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,#a94fff,#7028dd);font-weight:700;color:#fff;border:0;cursor:pointer;transition:opacity .2s}
+.media-actions button:hover{opacity:.9}
 .audio-box{padding:20px;background:#0b0910}
 .audio-box audio{width:100%}
 .audio-label{font-weight:800;margin-bottom:12px}
@@ -71,8 +70,6 @@ input::placeholder{color:#68636e}
 .download-btn{width:100%}
 .features{grid-template-columns:1fr;padding-top:30px}
 .feature{min-height:auto}
-.image-grid{grid-template-columns:2fr 2fr}
-.image-grid img{height:210px}
 .media-actions{flex-direction:column}
 }
 </style>
@@ -219,7 +216,6 @@ return "";
 }
 
 function normalizeResponse(data){
-
 const type=String(data.type||"").toLowerCase();
 
 const videoUrl=safeUrl(
@@ -298,15 +294,6 @@ audioUrl
 return null;
 }
 
-function escapeHtml(value){
-return String(value??"")
-.replace(/&/g,"&amp;")
-.replace(/</g,"&lt;")
-.replace(/>/g,"&gt;")
-.replace(/"/g,"&quot;")
-.replace(/'/g,"&#039;");
-}
-
 function downloadName(type,index=1){
 if(type==="video")return`cloupanz-video-${index}.mp4`;
 if(type==="image")return`cloupanz-photo-${index}.jpg`;
@@ -315,19 +302,15 @@ return`cloupanz-media-${index}`;
 }
 
 async function downloadMedia(url,fileName,element){
-
 const oldText=element.textContent;
 
 try{
-
 element.disabled=true;
 element.textContent="Mengunduh...";
 
+// Coba download via blob jika server asal mengizinkan CORS
 const response=await fetch(url);
-
-if(!response.ok){
-throw new Error(`HTTP ${response.status}`);
-}
+if(!response.ok) throw new Error(`HTTP ${response.status}`);
 
 const blob=await response.blob();
 const blobUrl=URL.createObjectURL(blob);
@@ -335,42 +318,36 @@ const a=document.createElement("a");
 
 a.href=blobUrl;
 a.download=fileName;
-a.style.display="none";
-
 document.body.appendChild(a);
 a.click();
 a.remove();
 
-setTimeout(()=>{
-URL.revokeObjectURL(blobUrl);
-},10000);
+setTimeout(()=>URL.revokeObjectURL(blobUrl),10000);
 
 element.textContent="✓ Selesai";
-
 setTimeout(()=>{
 element.textContent=oldText;
 element.disabled=false;
 },1500);
 
 }catch(error){
-
-console.error(error);
-
+// Fallback jika diblokir oleh CORS CDN: langsung buka link/download di browser
 element.disabled=false;
 element.textContent=oldText;
 
-status(
-"Gagal download langsung. Coba lagi.",
-"error"
-);
-
+const a=document.createElement("a");
+a.href=url;
+a.target="_blank";
+a.rel="noopener noreferrer";
+a.download=fileName;
+document.body.appendChild(a);
+a.click();
+a.remove();
 }
 }
 
 function createDownloadButton(url,label,file){
-
 const element=document.createElement("button");
-
 element.type="button";
 element.textContent=label;
 
@@ -379,7 +356,6 @@ downloadMedia(url,file,element);
 });
 
 const wrapper=document.createElement("div");
-
 wrapper.className="media-actions";
 wrapper.appendChild(element);
 
@@ -387,13 +363,10 @@ return wrapper;
 }
 
 function renderVideo(item){
-
 const card=document.createElement("div");
-
 card.className="media-card";
 
 const video=document.createElement("video");
-
 video.className="media-preview";
 video.controls=true;
 video.playsInline=true;
@@ -404,14 +377,11 @@ video.poster=item.thumbnail;
 }
 
 const source=document.createElement("source");
-
 source.src=item.videoUrl;
 source.type="video/mp4";
-
 video.appendChild(source);
 
 const info=document.createElement("div");
-
 info.className="media-info";
 
 const type=document.createElement("div");
@@ -439,24 +409,19 @@ mediaList.appendChild(card);
 }
 
 function renderImages(item){
-
 const images=item.images||[];
 
 images.forEach((url,index)=>{
-
 const card=document.createElement("div");
-
 card.className="media-card";
 
 const image=document.createElement("img");
-
 image.className="media-preview";
 image.src=url;
 image.alt=`Foto ${index+1}`;
 image.loading="lazy";
 
 const info=document.createElement("div");
-
 info.className="media-info";
 
 const type=document.createElement("div");
@@ -481,45 +446,35 @@ card.appendChild(image);
 card.appendChild(info);
 
 mediaList.appendChild(card);
-
 });
 }
 
 function renderAudio(item){
-
 const card=document.createElement("div");
-
 card.className="media-card";
 
 const audioBox=document.createElement("div");
-
 audioBox.className="audio-box";
 
 const label=document.createElement("div");
-
 label.className="audio-label";
 label.textContent="🎵 Audio";
 
 const audio=document.createElement("audio");
-
 audio.controls=true;
 audio.preload="metadata";
 
 const source=document.createElement("source");
-
 source.src=item.audioUrl;
-
 audio.appendChild(source);
 
 audioBox.appendChild(label);
 audioBox.appendChild(audio);
 
 const info=document.createElement("div");
-
 info.className="media-info";
 
 const title=document.createElement("div");
-
 title.className="media-title";
 title.textContent=item.title;
 
@@ -539,86 +494,49 @@ mediaList.appendChild(card);
 }
 
 function render(item){
-
 mediaList.innerHTML="";
 
 if(!item){
-
-status(
-"❌ Media tidak ditemukan.",
-"error"
-);
-
+status("❌ Media tidak ditemukan.","error");
 return;
 }
 
 if(item.type==="video"){
-
 renderVideo(item);
-
-status(
-"✅ Video berhasil ditemukan.",
-"success"
-);
-
+status("✅ Video berhasil ditemukan.","success");
 return;
 }
 
-if(
-item.type==="image"||
-item.type==="carousel"
-){
-
+if(item.type==="image"||item.type==="carousel"){
 renderImages(item);
 
 if(item.audioUrl){
-
 renderAudio({
 title:"Audio / Musik",
 audioUrl:item.audioUrl
 });
-
 }
 
-status(
-`✅ ${item.images.length} foto berhasil ditemukan.`,
-"success"
-);
-
+status(`✅ ${item.images.length} foto berhasil ditemukan.`,"success");
 return;
 }
 
 if(item.type==="audio"){
-
 renderAudio(item);
-
-status(
-"✅ Audio berhasil ditemukan.",
-"success"
-);
-
+status("✅ Audio berhasil ditemukan.","success");
 return;
 }
 
-status(
-"❌ Jenis media tidak dikenal.",
-"error"
-);
+status("❌ Jenis media tidak dikenal.","error");
 }
 
 form.addEventListener("submit",async event=>{
-
 event.preventDefault();
 
 const url=input.value.trim();
 
 if(!validUrl(url)){
-
-status(
-"❌ Link tidak valid.",
-"error"
-);
-
+status("❌ Link tidak valid.","error");
 return;
 }
 
@@ -627,82 +545,46 @@ clearResult();
 downloadBtn.disabled=true;
 downloadBtn.textContent="Mengambil...";
 
-status(
-"⏳ Mengambil media..."
-);
+status("⏳ Mengambil media...");
 
 try{
-
-const response=await fetch(
-"/api/download",
-{
+const response=await fetch("/api/download",{
 method:"POST",
 headers:{
 "Content-Type":"application/json",
 "Accept":"application/json"
 },
 body:JSON.stringify({url})
-}
-);
+});
 
 const text=await response.text();
-
 let data;
 
 try{
-
 data=JSON.parse(text);
-
 }catch{
-
-throw new Error(
-"Server mengirim response bukan JSON."
-);
-
+throw new Error("Server mengirim response bukan JSON.");
 }
 
 if(!response.ok){
-
-throw new Error(
-data?.message||
-data?.error||
-`Server error ${response.status}`
-);
-
+throw new Error(data?.message||data?.error||`Server error ${response.status}`);
 }
 
 if(data.success===false){
-
-throw new Error(
-data.message||
-data.error||
-"Media gagal diambil."
-);
-
+throw new Error(data.message||data.error||"Media gagal diambil.");
 }
 
 const result=normalizeResponse(data);
-
 render(result);
 
 }catch(error){
-
 mediaList.innerHTML="";
-
-status(
-`❌ ${error.message||"Gagal mengambil media."}`,
-"error"
-);
-
+status(`❌ ${error.message||"Gagal mengambil media."}`,"error");
 }finally{
-
 downloadBtn.disabled=false;
 downloadBtn.textContent="Download";
-
 input.value=url;
-
 }
-
 });
 </script>
 
