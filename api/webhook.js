@@ -446,11 +446,13 @@ async function proxyMedia(req, res) {
   const expected =
     signMediaUrl(target, time);
 
+  const sigBuf = Buffer.from(signature, "hex");
+  const expBuf = Buffer.from(expected, "hex");
+
+  // Mencegah crash jika panjang buffer berbeda
   if (
-    !crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expected)
-    )
+    sigBuf.length !== expBuf.length ||
+    !crypto.timingSafeEqual(sigBuf, expBuf)
   ) {
     return res.status(403).send("Invalid signature");
   }
@@ -524,7 +526,7 @@ async function fetchDownloader(url) {
   const timeout =
     setTimeout(
       () => controller.abort(),
-      55000
+      25000
     );
 
   try {
@@ -1473,4 +1475,4 @@ ${error?.message || "Terjadi kesalahan."}`
         "Webhook error."
     });
   }
-}
+  }
