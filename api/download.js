@@ -1,4 +1,3 @@
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -8,7 +7,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { url } = req.body || {};
+    const body =
+      typeof req.body === "string"
+        ? JSON.parse(req.body)
+        : req.body || {};
+
+    const { url } = body;
 
     if (!url) {
       return res.status(400).json({
@@ -150,10 +154,7 @@ export default async function handler(req, res) {
         return;
       }
 
-      if (value === thumbnail) {
-        return;
-      }
-
+      // Mempertahankan gambar meskipun URL sama dengan thumbnail
       if (!images.includes(value)) {
         images.push(value);
       }
