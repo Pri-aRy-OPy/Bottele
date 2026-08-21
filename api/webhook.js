@@ -9,16 +9,16 @@ async function sendTextMessage(chatId, text) {
   });
 }
 
-// Download file menjadi Blob Buffer
+// Download file media menjadi Buffer Blob
 async function getFileBlob(url) {
   const res = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
   });
-  if (!res.ok) throw new Error(`Gagal unduh media (${res.status})`);
+  if (!res.ok) throw new Error(`Gagal mengunduh media (${res.status})`);
   return await res.blob();
 }
 
-// Kirim Video Tunggal via Buffer
+// Kirim Video via Buffer
 async function sendVideo(chatId, videoUrl, title) {
   const blob = await getFileBlob(videoUrl);
   const form = new FormData();
@@ -29,12 +29,13 @@ async function sendVideo(chatId, videoUrl, title) {
 
   const res = await fetch(`${TELEGRAM_API}/sendVideo`, { method: "POST", body: form });
   const json = await res.json();
-  if (!json.ok) throw new Error(json.description || "Gagal kirim video");
+  if (!json.ok) throw new Error(json.description || "Gagal mengirim video");
 }
 
 // Kirim Foto Tunggal atau Album (Carousel) via Buffer
 async function sendPhotos(chatId, imageUrls, title) {
-  const urls = imageUrls.slice(0, 10); // Batas Telegram maks 10 foto per album
+  // Ambil maksimal 10 foto pertama sesuai batas album Telegram
+  const urls = imageUrls.slice(0, 10);
 
   if (urls.length === 1) {
     const blob = await getFileBlob(urls[0]);
@@ -45,11 +46,11 @@ async function sendPhotos(chatId, imageUrls, title) {
 
     const res = await fetch(`${TELEGRAM_API}/sendPhoto`, { method: "POST", body: form });
     const json = await res.json();
-    if (!json.ok) throw new Error(json.description || "Gagal kirim foto");
+    if (!json.ok) throw new Error(json.description || "Gagal mengirim foto");
     return;
   }
 
-  // Unduh semua foto secara paralel agar cepat
+  // Unduh seluruh foto secara paralel (cepat & hemat waktu serverless)
   const blobs = await Promise.all(urls.map(url => getFileBlob(url)));
 
   const form = new FormData();
@@ -61,7 +62,7 @@ async function sendPhotos(chatId, imageUrls, title) {
     return {
       type: "photo",
       media: `attach://${attachName}`,
-      caption: index === 0 ? `🖼️ ${title}\n\n☁️ Cloupanz` : undefined
+      caption: index === 0 ? `🖼️ ${title} (${urls.length} foto)\n\n☁️ Cloupanz` : undefined
     };
   });
 
@@ -69,41 +70,73 @@ async function sendPhotos(chatId, imageUrls, title) {
 
   const res = await fetch(`${TELEGRAM_API}/sendMediaGroup`, { method: "POST", body: form });
   const json = await res.json();
-  if (!json.ok) throw new Error(json.description || "Gagal kirim album foto");
+  if (!json.ok) throw new Error(json.description || "Gagal mengirim album foto");
 }
 
-// Kirim Audio Musik via Buffer
+// Kirim Audio Musik jika ada
 async function sendAudio(chatId, audioUrl, title) {
   const blob = await getFileBlob(audioUrl);
   const form = new FormData();
   form.append("chat_id", String(chatId));
   form.append("audio", blob, "audio.mp3");
   form.append("title", "Audio Musik");
-  form.append("caption", `🎵 ${title}\n\n☁️ Cloupanz`);
+  form.append("caption", `🎵 Musik: ${title}\n\n☁️ Cloupanz`);
 
   await fetch(`${TELEGRAM_API}/sendAudio`, { method: "POST", body: form });
 }
 
-// Ambil URL Gambar bersih dari berbagai struktur respon API
-function extractImages(root) {
-  const list = root?.images || root?.photos || root?.carousel || [];
-  const results = [];
+// Ekstraksi seluruh URL gambar secara rekursif dari seluruh struktur JSON API
+function extractAllImages(data) {
+  const urls = new Set();
 
-  const add = val => {
-    if (!val) return;
-    if (typeof val === "string" && val.startsWith("http")) results.push(val);
-    else if (typeof val === "object") {
-      const u = val.url || val.imageUrl || val.src || val.photo;
-      if (typeof u === "string" && u.startsWith("http")) results.push(u);
+  function walk(node, depth = 0) {
+    if (!node || depth > 8) return;
+
+    if (typeof node === "string") {
+      const lower = node.toLowerCase();
+      if (
+        (node.startsWith("http://") || node.startsWith("https://")) &&
+        (lower.includes(".jpg") ||
+          lower.includes(".jpeg") ||
+          lower.includes(".png") ||
+          lower.includes(".webp") ||
+          lower.includes("cdninstagram") ||
+          lower.includes("tiktokcdn") ||
+          lower.includes("image"))
+      ) {
+        urls.add(node);
+      }
+      return;
     }
-  };
 
-  if (Array.isArray(list)) list.forEach(add);
-  add(root?.image);
-  add(root?.display_url);
-  add(root?.thumbnail);
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item, depth + 1);
+      return;
+    }
 
-  return [...new Set(results)];
+    if (typeof node === "object") {
+      for (const key of Object.keys(node)) {
+        const k = key.toLowerCase();
+        // Telusuri kunci objek yang biasanya menyimpan gambar/slide
+        if (
+          k.includes("image") ||
+          k.includes("photo") ||
+          k.includes("carousel") ||
+          k.includes("slide") ||
+          k.includes("display") ||
+          k.includes("url") ||
+          k.includes("src") ||
+          k.includes("media") ||
+          k.includes("item")
+        ) {
+          walk(node[key], depth + 1);
+        }
+      }
+    }
+  }
+
+  walk(data);
+  return Array.from(urls);
 }
 
 async function fetchDownloader(url) {
@@ -114,7 +147,7 @@ async function fetchDownloader(url) {
   const text = await response.text();
   const data = JSON.parse(text);
   if (!response.ok) throw new Error(data?.message || "Gagal mengambil data media.");
-  return data?.data?.mediaInfo || data?.mediaInfo || data?.result || data?.data || data;
+  return data;
 }
 
 export default async function handler(req, res) {
@@ -129,7 +162,7 @@ export default async function handler(req, res) {
     const text = message.text.trim();
 
     if (text === "/start" || text === "/help") {
-      await sendTextMessage(chatId, "👋 Kirim link TikTok atau Instagram untuk mendownload media.");
+      await sendTextMessage(chatId, "👋 Kirim link TikTok atau Instagram untuk mengunduh media.");
       return res.status(200).json({ ok: true });
     }
 
@@ -141,25 +174,33 @@ export default async function handler(req, res) {
 
     await sendTextMessage(chatId, "⏳ Mengunduh dan memproses media...");
 
-    const root = await fetchDownloader(text);
-    const title = root?.title || "Cloupanz Media";
+    const fullData = await fetchDownloader(text);
+    const root = fullData?.data?.mediaInfo || fullData?.mediaInfo || fullData?.result || fullData?.data || fullData;
+
+    const title = root?.title || fullData?.title || "Cloupanz Media";
     const videoUrl = root?.videoUrl || root?.video_url || root?.url || "";
     const audioUrl = root?.audioUrl || root?.audio_url || root?.music || "";
-    const images = extractImages(root);
     const isPhotoUrl = text.includes("/photo/") || text.includes("/photo") || text.includes("/p/");
 
-    // 1. Kirim Foto / Carousel jika ada gambar atau formatnya link postingan foto
-    if ((isPhotoUrl || images.length > 0) && images.length > 0) {
-      await sendPhotos(chatId, images, title);
+    // Ambil seluruh foto yang ada di postingan
+    const images = extractAllImages(fullData);
+
+    // 1. Jika link berupa postingan foto atau ditemukan gambar
+    if (isPhotoUrl || images.length > 0) {
+      if (images.length > 0) {
+        await sendPhotos(chatId, images, title);
+      } else {
+        throw new Error("Foto tidak ditemukan pada postingan ini.");
+      }
     } 
-    // 2. Kirim Video jika bukan foto
+    // 2. Jika postingan adalah video
     else if (videoUrl) {
       await sendVideo(chatId, videoUrl, title);
     } else {
-      throw new Error("Format media tidak ditemukan.");
+      throw new Error("Format media tidak didukung atau tidak ditemukan.");
     }
 
-    // 3. Sertakan Audio jika postingan foto memiliki backsound
+    // 3. Sertakan audio jika ada (misal pada slide TikTok)
     if (audioUrl && images.length > 0) {
       await sendAudio(chatId, audioUrl, title).catch(() => {});
     }
@@ -172,4 +213,4 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: false, error: error.message });
   }
-      }
+}
