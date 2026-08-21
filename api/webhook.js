@@ -204,16 +204,44 @@ async function addDownload(user) {
 }
 
 // ==========================================
-// 2. TELEGRAM SENDER (BUFFER / MULTIPART)
+// 2. TELEGRAM SENDER & PROGRESS ANIMATION
 // ==========================================
 
-async function sendTextMessage(chatId, text) {
+async function sendTextMessage(chatId, text, replyMarkup = null) {
+  const body = { chat_id: chatId, text };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+
   const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text })
+    body: JSON.stringify(body)
   });
   return await res.json().catch(() => ({}));
+}
+
+async function updateProgress(chatId, messageId, percent, statusText) {
+  const totalBars = 10;
+  const filledBars = Math.min(10, Math.max(0, Math.round((percent / 100) * totalBars)));
+  const emptyBars = totalBars - filledBars;
+  const bar = "█".repeat(filledBars) + "░".repeat(emptyBars);
+
+  await fetch(`${TELEGRAM_API}/editMessageText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      message_id: messageId,
+      text: `⏳ ${statusText}\n\n[${bar}] ${percent}%\n\n☁️ Cloupanz`
+    })
+  }).catch(() => {});
+}
+
+async function deleteMessage(chatId, messageId) {
+  await fetch(`${TELEGRAM_API}/deleteMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, message_id: messageId })
+  }).catch(() => {});
 }
 
 async function getFileBlob(url) {
@@ -287,7 +315,7 @@ async function sendAudio(chatId, audioUrl, title) {
 }
 
 // ==========================================
-// 3. MEDIA SCRAPERS & ENGINE
+// 3. MEDIA SCRAPERS (TikWM & Multi-Engine IG)
 // ==========================================
 
 async function downloadTikTok(url) {
@@ -445,7 +473,7 @@ async function downloadInstagram(rawUrl) {
 }
 
 // ==========================================
-// 4. MAIN HANDLER & BOT COMMANDS
+// 4. MAIN HANDLER & BOT LOGIC
 // ==========================================
 
 export default async function handler(req, res) {
@@ -457,6 +485,29 @@ export default async function handler(req, res) {
     }
 
     const update = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+    // Handle Callback Query (Klik Tombol Inline)
+    if (update?.callback_query) {
+      const cb = update.callback_query;
+      const chatId = cb.message?.chat?.id;
+
+      await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_query_id: cb.id })
+      }).catch(() => {});
+
+      if (cb.data === "btn_check_limit" && chatId) {
+        const status = await getDownloadStatus(cb.from.id);
+        const text = status.admin
+          ? `👑 Status: Admin\n\nLimit: ∞ Tanpa batas`
+          : `📊 Kuota Download Kamu:\n\nTerpakai: ${status.downloads}/${DAILY_LIMIT}\nSisa: ${status.remaining} kali`;
+        await sendTextMessage(chatId, text);
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
     const message = update?.message;
     if (!message?.chat?.id) return res.status(200).json({ ok: true });
 
@@ -464,14 +515,20 @@ export default async function handler(req, res) {
     const user = message.from;
     const text = message.text?.trim() || "";
 
-    // Simpan atau perbarui data pengguna di database
     await saveUser(user);
 
     // Command: /start
     if (text === "/start" || text.startsWith("/start ")) {
+      const welcomeKeyboard = {
+        inline_keyboard: [
+          [{ text: "📊 Cek Sisa Limit", callback_data: "btn_check_limit" }]
+        ]
+      };
+
       await sendTextMessage(
         chatId,
-        `Halo ${user?.first_name || "kak"} 👋\n\nKirim link TikTok atau Instagram untuk mengunduh media.\n\n📌 Limit: ${DAILY_LIMIT}/hari\n\n/limit - Cek sisa kuota\n/help - Bantuan`
+        `Halo ${user?.first_name || "kak"} 👋\n\nKirim link TikTok atau Instagram untuk mengunduh media secara instan.\n\n📌 Limit: ${DAILY_LIMIT}/hari`,
+        welcomeKeyboard
       );
       return res.status(200).json({ ok: true });
     }
@@ -480,7 +537,7 @@ export default async function handler(req, res) {
     if (text === "/help") {
       await sendTextMessage(
         chatId,
-        `📖 Panduan Penggunaan\n\n1. Tempel link postingan TikTok atau Instagram.\n2. Bot akan mendeteksi format (Video, Album Foto, atau Audio).\n3. Media langsung dikirimkan ke chat ini.\n\n/limit - Cek kuota download\n/admin <PIN> - Aktivasi akses admin tanpa batas`
+        `📖 Panduan Penggunaan\n\n1. Tempel link postingan TikTok atau Instagram.\n2. Bot akan mendownload dan mengirimkan medianya secara otomatis.\n\n/limit - Cek kuota download\n/admin <PIN> - Aktivasi akses admin tanpa batas`
       );
       return res.status(200).json({ ok: true });
     }
@@ -533,7 +590,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Abaikan jika tidak ada teks pesan
     if (!text) return res.status(200).json({ ok: true });
 
     const isTikTok = text.includes("tiktok.com");
@@ -544,44 +600,56 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Cek Batas Limit Harian
+    // Cek Batas Limit
     const status = await getDownloadStatus(user.id);
     if (!status.admin && status.remaining <= 0) {
-      await sendTextMessage(chatId, `❌ Kuota download harian kamu sudah habis (${DAILY_LIMIT}/${DAILY_LIMIT}).\n\nCoba lagi besok atau gunakan akun admin.`);
+      await sendTextMessage(chatId, `❌ Kuota download harian kamu sudah habis (${DAILY_LIMIT}/${DAILY_LIMIT}).\n\nCoba lagi besok atau hubungi admin.`);
       return res.status(200).json({ ok: true });
     }
 
-    const processing = await sendTextMessage(chatId, `⏳ Mengunduh dan memproses media...`);
+    // 1. Pesan Awal Progress (0%)
+    const initMsg = await sendTextMessage(
+      chatId,
+      `⏳ Menghubungkan ke server...\n\n[░░░░░░░░░░] 0%\n\n☁️ Cloupanz`
+    );
+    const progressMsgId = initMsg?.result?.message_id;
+
+    // 2. Update Progress Scraping (35%)
+    if (progressMsgId) {
+      await updateProgress(chatId, progressMsgId, 35, "Mengambil metadata media...");
+    }
 
     const media = isTikTok ? await downloadTikTok(text) : await downloadInstagram(text);
 
-    // Pengiriman Foto / Album
+    // 3. Update Progress Unduh Buffer (70%)
+    if (progressMsgId) {
+      await updateProgress(chatId, progressMsgId, 70, "Memproses file media...");
+    }
+
+    // 4. Update Progress Pengiriman (95%)
+    if (progressMsgId) {
+      await updateProgress(chatId, progressMsgId, 95, "Mengunggah ke Telegram...");
+    }
+
     if (media.type === "photo" && media.images.length > 0) {
       await sendPhotos(chatId, media.images, media.title);
 
       if (media.audioUrl) {
         await sendAudio(chatId, media.audioUrl, media.title).catch(() => {});
       }
-    } 
-    // Pengiriman Video
-    else if (media.type === "video" && media.videoUrl) {
+    } else if (media.type === "video" && media.videoUrl) {
       await sendVideo(chatId, media.videoUrl, media.title);
     } else {
       throw new Error("Media tidak ditemukan.");
     }
 
-    // Catat penambahan unduhan ke database (hanya untuk non-admin)
     if (!status.admin) {
       await addDownload(user);
     }
 
-    // Hapus pesan loading jika berhasil terkirim
-    if (processing?.result?.message_id) {
-      await fetch(`${TELEGRAM_API}/deleteMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, message_id: processing.result.message_id })
-      }).catch(() => {});
+    // Hapus pesan progress setelah berhasil
+    if (progressMsgId) {
+      await deleteMessage(chatId, progressMsgId);
     }
 
     return res.status(200).json({ ok: true });
@@ -592,5 +660,4 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: false, error: error.message });
   }
-}
-  
+        }
