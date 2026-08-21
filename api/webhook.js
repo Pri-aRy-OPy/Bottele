@@ -28,7 +28,6 @@ function userDoc(id) {
 
 async function getUser(id) {
   if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) return null;
-
   try {
     const url = `${firestoreBase()}/users/${encodeURIComponent(userDoc(id))}?key=${FIREBASE_API_KEY}`;
     const r = await fetch(url);
@@ -39,7 +38,7 @@ async function getUser(id) {
   }
 }
 
-async function saveUser(user) {
+async function saveUser(user, refBy = null) {
   if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY || !user?.id) return;
 
   try {
@@ -48,11 +47,20 @@ async function saveUser(user) {
     const date = today();
 
     let downloads = Number(old?.fields?.downloads?.integerValue || 0);
+    let bonusLimit = Number(old?.fields?.bonus_limit?.integerValue || 0);
+    let referrals = Number(old?.fields?.referrals?.integerValue || 0);
     let lastReset = old?.fields?.last_reset?.stringValue || "";
 
+    // Reset harian
     if (lastReset !== date) {
       downloads = 0;
+      bonusLimit = 0; // Reset bonus harian
       lastReset = date;
+    }
+
+    // Jika pengguna baru mendaftar dari link referral
+    if (!old && refBy && refBy !== String(user.id)) {
+      await addReferralBonus(refBy, user.first_name || "Teman");
     }
 
     const data = {
@@ -62,6 +70,8 @@ async function saveUser(user) {
         first_name: { stringValue: user.first_name || "" },
         last_name: { stringValue: user.last_name || "" },
         downloads: { integerValue: String(downloads) },
+        bonus_limit: { integerValue: String(bonusLimit) },
+        referrals: { integerValue: String(referrals) },
         last_reset: { stringValue: lastReset },
         is_admin: { booleanValue: old?.fields?.is_admin?.booleanValue === true },
         last_seen: { timestampValue: new Date().toISOString() }
@@ -79,6 +89,37 @@ async function saveUser(user) {
   }
 }
 
+async function addReferralBonus(referrerId, newUserName) {
+  try {
+    const ref = await getUser(referrerId);
+    if (!ref) return;
+
+    let bonus = Number(ref?.fields?.bonus_limit?.integerValue || 0) + 3;
+    let refs = Number(ref?.fields?.referrals?.integerValue || 0) + 1;
+
+    const url = `${firestoreBase()}/users/${encodeURIComponent(referrerId)}?key=${FIREBASE_API_KEY}`;
+    await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          ...ref.fields,
+          bonus_limit: { integerValue: String(bonus) },
+          referrals: { integerValue: String(refs) }
+        }
+      })
+    });
+
+    // Kirim notifikasi bonus ke pengundang
+    await sendTextMessage(
+      referrerId,
+      `🎉 <b>Selamat!</b> <b>${newUserName}</b> bergabung lewat tautanmu.\n🎁 Kuota download kamu bertambah <b>+3 limit</b> hari ini!`
+    );
+  } catch (err) {
+    console.error("Add Referral Bonus Error:", err);
+  }
+}
+
 async function isAdmin(id) {
   const user = await getUser(id);
   return user?.fields?.is_admin?.booleanValue === true;
@@ -90,29 +131,6 @@ async function claimAdmin(user) {
   if (user.__adminPin !== ADMIN_PIN) return { ok: false, message: "PIN salah." };
 
   try {
-    const configUrl = `${firestoreBase()}/config/bot?key=${FIREBASE_API_KEY}`;
-    const check = await fetch(configUrl);
-
-    if (check.ok) {
-      const configData = await check.json();
-      const existing = configData?.fields?.admin_id?.stringValue;
-      if (existing && existing !== String(user.id)) {
-        return { ok: false, message: "Admin sudah terdaftar sebelumnya." };
-      }
-    }
-
-    await fetch(configUrl, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fields: {
-          admin_id: { stringValue: String(user.id) },
-          admin_username: { stringValue: user.username || "" },
-          created_at: { timestampValue: new Date().toISOString() }
-        }
-      })
-    });
-
     const userId = String(user.id);
     const userUrl = `${firestoreBase()}/users/${encodeURIComponent(userId)}?key=${FIREBASE_API_KEY}`;
     const old = await getUser(userId);
@@ -122,12 +140,10 @@ async function claimAdmin(user) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         fields: {
+          ...(old?.fields || {}),
           telegram_id: { stringValue: userId },
           username: { stringValue: user.username || "" },
           first_name: { stringValue: user.first_name || "" },
-          last_name: { stringValue: user.last_name || "" },
-          downloads: { integerValue: String(old?.fields?.downloads?.integerValue || 0) },
-          last_reset: { stringValue: today() },
           is_admin: { booleanValue: true },
           last_seen: { timestampValue: new Date().toISOString() }
         }
@@ -143,43 +159,39 @@ async function claimAdmin(user) {
 async function getDownloadStatus(id) {
   const user = await getUser(id);
   if (!user) {
-    return { downloads: 0, remaining: DAILY_LIMIT, admin: false };
+    return { downloads: 0, maxLimit: DAILY_LIMIT, remaining: DAILY_LIMIT, admin: false };
   }
 
   const admin = user?.fields?.is_admin?.booleanValue === true;
   if (admin) {
-    return { downloads: 0, remaining: Infinity, admin: true };
+    return { downloads: 0, maxLimit: Infinity, remaining: Infinity, admin: true };
   }
 
   let downloads = Number(user?.fields?.downloads?.integerValue || 0);
+  let bonusLimit = Number(user?.fields?.bonus_limit?.integerValue || 0);
   const lastReset = user?.fields?.last_reset?.stringValue || "";
 
   if (lastReset !== today()) {
     downloads = 0;
+    bonusLimit = 0;
   }
+
+  const totalMax = DAILY_LIMIT + bonusLimit;
 
   return {
     downloads,
-    remaining: Math.max(DAILY_LIMIT - downloads, 0),
+    bonusLimit,
+    maxLimit: totalMax,
+    remaining: Math.max(totalMax - downloads, 0),
     admin: false
   };
 }
 
 async function addDownload(user) {
   if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) return;
-
   try {
     const old = await getUser(user.id);
-    const date = today();
-
-    let downloads = Number(old?.fields?.downloads?.integerValue || 0);
-    const lastReset = old?.fields?.last_reset?.stringValue || "";
-
-    if (lastReset !== date) {
-      downloads = 0;
-    }
-
-    downloads++;
+    let downloads = Number(old?.fields?.downloads?.integerValue || 0) + 1;
 
     const url = `${firestoreBase()}/users/${encodeURIComponent(String(user.id))}?key=${FIREBASE_API_KEY}`;
     await fetch(url, {
@@ -187,13 +199,8 @@ async function addDownload(user) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         fields: {
-          telegram_id: { stringValue: String(user.id) },
-          username: { stringValue: user.username || "" },
-          first_name: { stringValue: user.first_name || "" },
-          last_name: { stringValue: user.last_name || "" },
+          ...old.fields,
           downloads: { integerValue: String(downloads) },
-          last_reset: { stringValue: date },
-          is_admin: { booleanValue: old?.fields?.is_admin?.booleanValue === true },
           last_seen: { timestampValue: new Date().toISOString() }
         }
       })
@@ -204,11 +211,11 @@ async function addDownload(user) {
 }
 
 // ==========================================
-// 2. TELEGRAM SENDER & PROGRESS ANIMATION
+// 2. TELEGRAM SENDER & UI UTILITIES
 // ==========================================
 
 async function sendTextMessage(chatId, text, replyMarkup = null) {
-  const body = { chat_id: chatId, text };
+  const body = { chat_id: chatId, text, parse_mode: "HTML" };
   if (replyMarkup) body.reply_markup = replyMarkup;
 
   const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
@@ -219,21 +226,28 @@ async function sendTextMessage(chatId, text, replyMarkup = null) {
   return await res.json().catch(() => ({}));
 }
 
+async function editMessage(chatId, messageId, text, replyMarkup = null) {
+  const body = { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+
+  await fetch(`${TELEGRAM_API}/editMessageText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  }).catch(() => {});
+}
+
 async function updateProgress(chatId, messageId, percent, statusText) {
   const totalBars = 10;
   const filledBars = Math.min(10, Math.max(0, Math.round((percent / 100) * totalBars)));
   const emptyBars = totalBars - filledBars;
   const bar = "█".repeat(filledBars) + "░".repeat(emptyBars);
 
-  await fetch(`${TELEGRAM_API}/editMessageText`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      message_id: messageId,
-      text: `⏳ ${statusText}\n\n[${bar}] ${percent}%\n\n☁️ Cloupanz`
-    })
-  }).catch(() => {});
+  await editMessage(
+    chatId,
+    messageId,
+    `⏳ <b>${statusText}</b>\n\n<code>[${bar}] ${percent}%</code>\n\n☁️ <b>Cloupanz</b>`
+  );
 }
 
 async function deleteMessage(chatId, messageId) {
@@ -257,7 +271,8 @@ async function sendVideo(chatId, videoUrl, title) {
   const form = new FormData();
   form.append("chat_id", String(chatId));
   form.append("video", blob, "video.mp4");
-  form.append("caption", `🎬 ${title}\n\n☁️ Cloupanz`);
+  form.append("caption", `🎬 <b>${title}</b>\n\n☁️ Cloupanz`);
+  form.append("parse_mode", "HTML");
   form.append("supports_streaming", "true");
 
   const res = await fetch(`${TELEGRAM_API}/sendVideo`, { method: "POST", body: form });
@@ -273,7 +288,8 @@ async function sendPhotos(chatId, imageUrls, title) {
     const form = new FormData();
     form.append("chat_id", String(chatId));
     form.append("photo", blob, "photo.jpg");
-    form.append("caption", `🖼️ ${title}\n\n☁️ Cloupanz`);
+    form.append("caption", `🖼️ <b>${title}</b>\n\n☁️ Cloupanz`);
+    form.append("parse_mode", "HTML");
 
     const res = await fetch(`${TELEGRAM_API}/sendPhoto`, { method: "POST", body: form });
     const json = await res.json();
@@ -292,7 +308,8 @@ async function sendPhotos(chatId, imageUrls, title) {
     return {
       type: "photo",
       media: `attach://${attachName}`,
-      caption: index === 0 ? `🖼️ ${title} (${urls.length} foto)\n\n☁️ Cloupanz` : undefined
+      caption: index === 0 ? `🖼️ <b>${title}</b> (${urls.length} foto)\n\n☁️ Cloupanz` : undefined,
+      parse_mode: "HTML"
     };
   });
 
@@ -309,13 +326,14 @@ async function sendAudio(chatId, audioUrl, title) {
   form.append("chat_id", String(chatId));
   form.append("audio", blob, "audio.mp3");
   form.append("title", "Audio Musik");
-  form.append("caption", `🎵 Musik: ${title}\n\n☁️ Cloupanz`);
+  form.append("caption", `🎵 <b>Musik:</b> ${title}\n\n☁️ Cloupanz`);
+  form.append("parse_mode", "HTML");
 
   await fetch(`${TELEGRAM_API}/sendAudio`, { method: "POST", body: form });
 }
 
 // ==========================================
-// 3. MEDIA SCRAPERS (TikWM & Multi-Engine IG)
+// 3. MEDIA SCRAPERS (TikTok, Instagram, Pinterest)
 // ==========================================
 
 async function downloadTikTok(url) {
@@ -323,9 +341,7 @@ async function downloadTikTok(url) {
     headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" }
   });
   const json = await res.json();
-  if (json.code !== 0 || !json.data) {
-    throw new Error(json.msg || "Gagal mengambil data TikTok.");
-  }
+  if (json.code !== 0 || !json.data) throw new Error(json.msg || "Gagal mengambil data TikTok.");
 
   const d = json.data;
   const isSlide = Array.isArray(d.images) && d.images.length > 0;
@@ -368,26 +384,13 @@ function parseIgMedia(json) {
   };
 
   const root = json?.data?.mediaInfo || json?.mediaInfo || json?.data || json?.result || json;
-
   const containers = [
-    root?.carousel,
-    root?.carouselMedia,
-    root?.carousel_media,
-    root?.medias,
-    root?.media,
-    root?.images,
-    root?.photos,
-    root?.items,
-    root?.slides,
-    Array.isArray(root) ? root : null,
-    Array.isArray(json?.data) ? json.data : null,
-    Array.isArray(json?.result) ? json.result : null
+    root?.carousel, root?.carouselMedia, root?.medias, root?.images, root?.photos, root?.items,
+    Array.isArray(root) ? root : null, Array.isArray(json?.data) ? json.data : null
   ];
 
   for (const arr of containers) {
-    if (Array.isArray(arr) && arr.length > 0) {
-      arr.forEach(checkAndAdd);
-    }
+    if (Array.isArray(arr) && arr.length > 0) arr.forEach(checkAndAdd);
   }
 
   if (images.length === 0 && videos.length === 0) {
@@ -408,13 +411,10 @@ async function downloadInstagram(rawUrl) {
 
   try {
     const api1 = `https://ahm7xmakki.com/api/alldl?url=` + encodeURIComponent(cleanUrl);
-    const res1 = await fetch(api1, {
-      headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" }
-    });
+    const res1 = await fetch(api1, { headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" } });
     if (res1.ok) {
       const json1 = await res1.json();
       const parsed = parseIgMedia(json1);
-
       if (parsed.images.length > 1 || isReels || (parsed.videos.length > 0 && parsed.images.length === 0)) {
         const isVid = isReels || (parsed.videos.length > 0 && parsed.images.length === 0);
         return {
@@ -429,13 +429,10 @@ async function downloadInstagram(rawUrl) {
 
   try {
     const api2 = `https://api.siputzx.my.id/api/d/ig?url=` + encodeURIComponent(cleanUrl);
-    const res2 = await fetch(api2, {
-      headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" }
-    });
+    const res2 = await fetch(api2, { headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" } });
     if (res2.ok) {
       const json2 = await res2.json();
       const parsed2 = parseIgMedia(json2);
-
       if (parsed2.images.length > 0 || parsed2.videos.length > 0) {
         const isVid = isReels || (parsed2.videos.length > 0 && parsed2.images.length === 0);
         return {
@@ -448,32 +445,75 @@ async function downloadInstagram(rawUrl) {
     }
   } catch {}
 
-  try {
-    const api3 = `https://api.vkrdownloader.com/server?vkr=` + encodeURIComponent(cleanUrl);
-    const res3 = await fetch(api3, {
-      headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" }
-    });
-    if (res3.ok) {
-      const json3 = await res3.json();
-      const parsed3 = parseIgMedia(json3);
-
-      if (parsed3.images.length > 0 || parsed3.videos.length > 0) {
-        const isVid = isReels || (parsed3.videos.length > 0 && parsed3.images.length === 0);
-        return {
-          type: isVid ? "video" : "photo",
-          title: parsed3.title,
-          images: isVid ? [] : parsed3.images,
-          videoUrl: isVid ? (parsed3.videos[0] || "") : ""
-        };
-      }
-    }
-  } catch {}
-
   throw new Error("Gagal mengambil media Instagram. Pastikan akun tidak di-private.");
 }
 
+async function downloadPinterest(url) {
+  try {
+    const api = `https://api.siputzx.my.id/api/d/pinterest?url=` + encodeURIComponent(url);
+    const res = await fetch(api, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const json = await res.json();
+
+    if (json.status && json.data) {
+      const mediaUrl = json.data.url || json.data.image || json.data.video;
+      const isVideo = mediaUrl?.includes(".mp4") || Boolean(json.data.video);
+
+      return {
+        type: isVideo ? "video" : "photo",
+        title: json.data.title || "Pinterest Media",
+        images: isVideo ? [] : [mediaUrl],
+        videoUrl: isVideo ? mediaUrl : ""
+      };
+    }
+  } catch {}
+
+  // Fallback Pinterest
+  const fallback = `https://ahm7xmakki.com/api/alldl?url=` + encodeURIComponent(url);
+  const fRes = await fetch(fallback, { headers: { "User-Agent": "Mozilla/5.0" } });
+  const fJson = await fRes.json();
+  const root = fJson?.data?.mediaInfo || fJson?.data || fJson;
+
+  const vid = root?.videoUrl || root?.video_url || "";
+  const img = root?.image || root?.thumbnail || root?.url || "";
+
+  if (!vid && !img) throw new Error("Gagal mengambil media Pinterest.");
+
+  return {
+    type: vid ? "video" : "photo",
+    title: root?.title || "Pinterest Media",
+    images: vid ? [] : [img],
+    videoUrl: vid
+  };
+}
+
 // ==========================================
-// 4. MAIN HANDLER & BOT LOGIC
+// 4. INLINE KEYBOARDS
+// ==========================================
+
+function getMainMenuKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: "📊 Cek Sisa Limit", callback_data: "btn_limit" },
+        { text: "🎁 Tambah Limit Gratis", callback_data: "btn_tambah_limit" }
+      ],
+      [
+        { text: "📖 Panduan / Cara Pakai", callback_data: "btn_help" }
+      ]
+    ]
+  };
+}
+
+function getBackKeyboard() {
+  return {
+    inline_keyboard: [
+      [{ text: "🔙 Kembali ke Menu", callback_data: "btn_main_menu" }]
+    ]
+  };
+}
+
+// ==========================================
+// 5. MAIN HANDLER (Webhook, Inline Query, Broadcast)
 // ==========================================
 
 export default async function handler(req, res) {
@@ -486,10 +526,43 @@ export default async function handler(req, res) {
 
     const update = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
-    // Handle Callback Query (Klik Tombol Inline)
+    // --- A. HANDLE INLINE QUERY (@bot <link>) ---
+    if (update?.inline_query) {
+      const q = update.inline_query;
+      const queryText = q.query.trim();
+
+      const results = [];
+      if (queryText.startsWith("http")) {
+        results.push({
+          type: "article",
+          id: "dl_media",
+          title: "📥 Download Media Ini",
+          description: queryText,
+          input_message_content: {
+            message_text: queryText
+          }
+        });
+      }
+
+      await fetch(`${TELEGRAM_API}/answerInlineQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inline_query_id: q.id,
+          results,
+          cache_time: 1
+        })
+      }).catch(() => {});
+
+      return res.status(200).json({ ok: true });
+    }
+
+    // --- B. HANDLE CALLBACK QUERY (KLIK TOMBOL) ---
     if (update?.callback_query) {
       const cb = update.callback_query;
       const chatId = cb.message?.chat?.id;
+      const messageId = cb.message?.message_id;
+      const userId = cb.from?.id;
 
       await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
         method: "POST",
@@ -497,12 +570,44 @@ export default async function handler(req, res) {
         body: JSON.stringify({ callback_query_id: cb.id })
       }).catch(() => {});
 
-      if (cb.data === "btn_check_limit" && chatId) {
-        const status = await getDownloadStatus(cb.from.id);
+      // Menu: Cek Limit
+      if (cb.data === "btn_limit" && chatId) {
+        const status = await getDownloadStatus(userId);
         const text = status.admin
-          ? `👑 Status: Admin\n\nLimit: ∞ Tanpa batas`
-          : `📊 Kuota Download Kamu:\n\nTerpakai: ${status.downloads}/${DAILY_LIMIT}\nSisa: ${status.remaining} kali`;
-        await sendTextMessage(chatId, text);
+          ? `👑 <b>Status Akun: Admin</b>\n\nLimit: ∞ <i>Tanpa Batas</i>`
+          : `📊 <b>Status Kuota Kamu</b>\n\n• Kuota Dasar: <b>${DAILY_LIMIT}</b>/hari\n• Bonus Tambahan: <b>+${status.bonusLimit}</b>\n• Terpakai Hari Ini: <b>${status.downloads}</b>\n• Sisa Kuota: <b>${status.remaining}</b> kali unduh`;
+
+        await editMessage(chatId, messageId, text, getBackKeyboard());
+      }
+
+     // Menu: Tambah Limit Gratis (Referral)
+      if (cb.data === "btn_tambah_limit" && chatId) {
+        const botInfo = await fetch(`${TELEGRAM_API}/getMe`).then(r => r.json());
+        const botUsername = botInfo?.result?.username || "bot";
+        const refLink = `https://t.me/${botUsername}?start=ref_${userId}`;
+
+        const text = `🎁 <b>Cara Menambah Kuota Download Gratis</b>\n\nBagikan tautan referral kamu ke teman atau grup. Setiap ada 1 teman yang bergabung menggunakan linkmu, kamu langsung mendapatkan <b>+3 kuota download harian</b>!\n\n🔗 <b>Tautan Referral Kamu:</b>\n<code>${refLink}</code>\n\n<i>Klik link di atas untuk menyalin.</i>`;
+
+        const shareKeyboard = {
+          inline_keyboard: [
+            [{ text: "🚀 Bagikan ke Teman", url: `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent("Download video TikTok, Instagram, dan Pinterest gratis tanpa watermark di bot ini:")}` }],
+            [{ text: "🔙 Kembali", callback_data: "btn_main_menu" }]
+          ]
+        };
+
+        await editMessage(chatId, messageId, text, shareKeyboard);
+      }
+
+      // Menu: Panduan
+      if (cb.data === "btn_help" && chatId) {
+        const text = `📖 <b>Panduan Penggunaan Cloupanz</b>\n\n1. Salin tautan postingan dari <b>TikTok</b>, <b>Instagram</b>, atau <b>Pinterest</b>.\n2. Kirim/tempel link tersebut ke ruang obrolan ini.\n3. Bot akan langsung memproses dan mengirimkan media aslinya (Video/Album Foto/Musik).\n\n💡 <i>Kamu juga bisa mengetik <code>@namabot &lt;link&gt;</code> di grup mana saja!</i>`;
+        await editMessage(chatId, messageId, text, getBackKeyboard());
+      }
+
+      // Kembali ke Menu Utama
+      if (cb.data === "btn_main_menu" && chatId) {
+        const text = `Halo <b>${cb.from?.first_name || "kak"}</b> 👋\n\nKirimkan tautan <b>TikTok</b>, <b>Instagram</b>, atau <b>Pinterest</b> untuk mengunduh media.`;
+        await editMessage(chatId, messageId, text, getMainMenuKeyboard());
       }
 
       return res.status(200).json({ ok: true });
@@ -515,20 +620,20 @@ export default async function handler(req, res) {
     const user = message.from;
     const text = message.text?.trim() || "";
 
-    await saveUser(user);
+    // Deteksi Parameter Referral pada /start
+    let refBy = null;
+    if (text.startsWith("/start ref_")) {
+      refBy = text.split("ref_")[1]?.trim();
+    }
+
+    await saveUser(user, refBy);
 
     // Command: /start
-    if (text === "/start" || text.startsWith("/start ")) {
-      const welcomeKeyboard = {
-        inline_keyboard: [
-          [{ text: "📊 Cek Sisa Limit", callback_data: "btn_check_limit" }]
-        ]
-      };
-
+    if (text.startsWith("/start")) {
       await sendTextMessage(
         chatId,
-        `Halo ${user?.first_name || "kak"} 👋\n\nKirim link TikTok atau Instagram untuk mengunduh media secara instan.\n\n📌 Limit: ${DAILY_LIMIT}/hari`,
-        welcomeKeyboard
+        `Halo <b>${user?.first_name || "kak"}</b> 👋\n\nKirimkan tautan <b>TikTok</b>, <b>Instagram</b>, atau <b>Pinterest</b> untuk mengunduh media secara instan tanpa watermark.`,
+        getMainMenuKeyboard()
       );
       return res.status(200).json({ ok: true });
     }
@@ -537,39 +642,33 @@ export default async function handler(req, res) {
     if (text === "/help") {
       await sendTextMessage(
         chatId,
-        `📖 Panduan Penggunaan\n\n1. Tempel link postingan TikTok atau Instagram.\n2. Bot akan mendownload dan mengirimkan medianya secara otomatis.\n\n/limit - Cek kuota download\n/admin <PIN> - Aktivasi akses admin tanpa batas`
+        `📖 <b>Panduan Penggunaan Cloupanz</b>\n\nCukup kirimkan link postingan TikTok, Instagram, atau Pinterest ke sini.`,
+        getMainMenuKeyboard()
       );
       return res.status(200).json({ ok: true });
     }
 
-    // Command: /limit atau /me
-    if (text === "/limit" || text === "/me") {
-      const status = await getDownloadStatus(user.id);
-      const limitMsg = status.admin
-        ? `👑 Admin Cloupanz\n\nLimit: ∞ Tanpa batas`
-        : `📊 Kuota Download Cloupanz\n\nPenggunaan hari ini: ${status.downloads}/${DAILY_LIMIT}\nSisa kuota: ${status.remaining} kali`;
-
-      await sendTextMessage(chatId, limitMsg);
-      return res.status(200).json({ ok: true });
-    }
-
-    // Command: /admin <PIN>
+    // --- FITUR ADMIN TERSEMBUNYI ---
     if (text.startsWith("/admin ")) {
       const pin = text.slice(7).trim();
       const result = await claimAdmin({ ...user, __adminPin: pin });
-
       await sendTextMessage(
         chatId,
-        result.ok ? `👑 Akses Admin Berhasil Diaktifkan!\n\nKamu sekarang memiliki akses tanpa batas kuota.` : `❌ ${result.message}`
+        result.ok ? `👑 <b>Akses Admin Aktif!</b>\n\nKamu sekarang memiliki kuota tanpa batas dan dapat menggunakan fitur <code>/broadcast</code>.` : `❌ ${result.message}`
       );
       return res.status(200).json({ ok: true });
     }
 
-    // Command: /stats (Khusus Admin)
-    if (text === "/stats") {
+    // Command Broadcast (Khusus Admin)
+    if (text.startsWith("/broadcast ")) {
       const admin = await isAdmin(user.id);
       if (!admin) {
-        await sendTextMessage(chatId, "❌ Perintah ini khusus admin.");
+        return res.status(200).json({ ok: true }); // Diamkan jika bukan admin
+      }
+
+      const broadcastMsg = text.slice(11).trim();
+      if (!broadcastMsg) {
+        await sendTextMessage(chatId, "❌ Masukkan pesan yang ingin di-broadcast.\nContoh: <code>/broadcast Halo semua!</code>");
         return res.status(200).json({ ok: true });
       }
 
@@ -578,76 +677,90 @@ export default async function handler(req, res) {
       const dbData = await resp.json();
       const userDocs = dbData.documents || [];
 
-      let totalDownloads = 0;
-      for (const item of userDocs) {
-        totalDownloads += Number(item?.fields?.downloads?.integerValue || 0);
+      await sendTextMessage(chatId, `⏳ Memulai broadcast ke <b>${userDocs.length}</b> pengguna...`);
+
+      let successCount = 0;
+      for (const doc of userDocs) {
+        const targetId = doc.fields?.telegram_id?.stringValue;
+        if (targetId) {
+          const sent = await sendTextMessage(targetId, `📢 <b>PENGUMUMAN</b>\n\n${broadcastMsg}`);
+          if (sent?.ok) successCount++;
+        }
       }
 
-      await sendTextMessage(
-        chatId,
-        `📊 Statistik Cloupanz\n\n👥 Total Pengguna: ${userDocs.length}\n📥 Total Download Hari Ini: ${totalDownloads}\n👑 Status Admin: Aktif`
-      );
+      await sendTextMessage(chatId, `✅ Broadcast selesai!\nBerhasil terkirim ke <b>${successCount}/${userDocs.length}</b> pengguna.`);
       return res.status(200).json({ ok: true });
     }
 
     if (!text) return res.status(200).json({ ok: true });
 
+    // Validasi Platform
     const isTikTok = text.includes("tiktok.com");
     const isInstagram = text.includes("instagram.com") || text.includes("instagr.am");
+    const isPinterest = text.includes("pinterest.com") || text.includes("pin.it");
 
-    if (!isTikTok && !isInstagram) {
-      await sendTextMessage(chatId, "❌ Kirim link TikTok atau Instagram yang valid.");
+    if (!isTikTok && !isInstagram && !isPinterest) {
+      await sendTextMessage(
+        chatId,
+        "❌ <b>Tautan tidak didukung.</b>\n\nKirimkan link yang valid dari:\n• 🎵 TikTok\n• 📸 Instagram\n• 📌 Pinterest",
+        getMainMenuKeyboard()
+      );
       return res.status(200).json({ ok: true });
     }
 
-    // Cek Batas Limit
+    // Cek Batas Kuota
     const status = await getDownloadStatus(user.id);
     if (!status.admin && status.remaining <= 0) {
-      await sendTextMessage(chatId, `❌ Kuota download harian kamu sudah habis (${DAILY_LIMIT}/${DAILY_LIMIT}).\n\nCoba lagi besok atau hubungi admin.`);
+      await sendTextMessage(
+        chatId,
+        `❌ <b>Kuota download harian kamu telah habis!</b>\n\nKamu bisa mendapatkan <b>+3 kuota gratis</b> sekarang dengan membagikan link referral ke teman.`,
+        {
+          inline_keyboard: [
+            [{ text: "🎁 Tambah Kuota Gratis Sekarang", callback_data: "btn_tambah_limit" }]
+          ]
+        }
+      );
       return res.status(200).json({ ok: true });
     }
 
-    // 1. Pesan Awal Progress (0%)
-    const initMsg = await sendTextMessage(
-      chatId,
-      `⏳ Menghubungkan ke server...\n\n[░░░░░░░░░░] 0%\n\n☁️ Cloupanz`
-    );
+    // Animasi Progress Bar Bertahap
+    const initMsg = await sendTextMessage(chatId, `⏳ <b>Menghubungkan...</b>\n\n<code>[░░░░░░░░░░] 0%</code>\n\n☁️ Cloupanz`);
     const progressMsgId = initMsg?.result?.message_id;
 
-    // 2. Update Progress Scraping (35%)
     if (progressMsgId) {
-      await updateProgress(chatId, progressMsgId, 35, "Mengambil metadata media...");
+      await updateProgress(chatId, progressMsgId, 30, "Mengekstrak media...");
     }
 
-    const media = isTikTok ? await downloadTikTok(text) : await downloadInstagram(text);
+    let media;
+    if (isTikTok) media = await downloadTikTok(text);
+    else if (isInstagram) media = await downloadInstagram(text);
+    else if (isPinterest) media = await downloadPinterest(text);
 
-    // 3. Update Progress Unduh Buffer (70%)
     if (progressMsgId) {
-      await updateProgress(chatId, progressMsgId, 70, "Memproses file media...");
+      await updateProgress(chatId, progressMsgId, 70, "Mengunduh file...");
     }
 
-    // 4. Update Progress Pengiriman (95%)
     if (progressMsgId) {
-      await updateProgress(chatId, progressMsgId, 95, "Mengunggah ke Telegram...");
+      await updateProgress(chatId, progressMsgId, 95, "Mengirim ke chat...");
     }
 
+    // Eksekusi Pengiriman Media
     if (media.type === "photo" && media.images.length > 0) {
       await sendPhotos(chatId, media.images, media.title);
-
       if (media.audioUrl) {
         await sendAudio(chatId, media.audioUrl, media.title).catch(() => {});
       }
     } else if (media.type === "video" && media.videoUrl) {
       await sendVideo(chatId, media.videoUrl, media.title);
     } else {
-      throw new Error("Media tidak ditemukan.");
+      throw new Error("Media tidak ditemukan atau postingan bersifat privat.");
     }
 
+    // Catat pemakaian kuota jika bukan admin
     if (!status.admin) {
       await addDownload(user);
     }
 
-    // Hapus pesan progress setelah berhasil
     if (progressMsgId) {
       await deleteMessage(chatId, progressMsgId);
     }
@@ -656,8 +769,8 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("WEBHOOK ERROR:", error);
     if (req.body?.message?.chat?.id) {
-      await sendTextMessage(req.body.message.chat.id, `❌ Gagal mengambil media: ${error.message}`);
+      await sendTextMessage(req.body.message.chat.id, `❌ <b>Gagal mengunduh:</b> ${error.message}`);
     }
     return res.status(200).json({ ok: false, error: error.message });
   }
-        }
+}
