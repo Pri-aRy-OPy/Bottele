@@ -9,12 +9,12 @@ async function sendTextMessage(chatId, text) {
   });
 }
 
-// Download file media menjadi Buffer Blob
+// Unduh file menjadi Buffer Blob
 async function getFileBlob(url) {
   const res = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
   });
-  if (!res.ok) throw new Error(`Gagal mengunduh media (${res.status})`);
+  if (!res.ok) throw new Error(`Gagal unduh file (${res.status})`);
   return await res.blob();
 }
 
@@ -32,10 +32,9 @@ async function sendVideo(chatId, videoUrl, title) {
   if (!json.ok) throw new Error(json.description || "Gagal mengirim video");
 }
 
-// Kirim Foto Tunggal atau Album (Carousel) via Buffer
+// Kirim Foto Tunggal atau Album via Buffer
 async function sendPhotos(chatId, imageUrls, title) {
-  // Ambil maksimal 10 foto pertama sesuai batas album Telegram
-  const urls = imageUrls.slice(0, 10);
+  const urls = imageUrls.slice(0, 10); // Batas maksimal album Telegram
 
   if (urls.length === 1) {
     const blob = await getFileBlob(urls[0]);
@@ -50,7 +49,7 @@ async function sendPhotos(chatId, imageUrls, title) {
     return;
   }
 
-  // Unduh seluruh foto secara paralel (cepat & hemat waktu serverless)
+  // Unduh seluruh foto bersamaan
   const blobs = await Promise.all(urls.map(url => getFileBlob(url)));
 
   const form = new FormData();
@@ -73,7 +72,7 @@ async function sendPhotos(chatId, imageUrls, title) {
   if (!json.ok) throw new Error(json.description || "Gagal mengirim album foto");
 }
 
-// Kirim Audio Musik jika ada
+// Kirim Audio jika ada musik latar
 async function sendAudio(chatId, audioUrl, title) {
   const blob = await getFileBlob(audioUrl);
   const form = new FormData();
@@ -85,58 +84,42 @@ async function sendAudio(chatId, audioUrl, title) {
   await fetch(`${TELEGRAM_API}/sendAudio`, { method: "POST", body: form });
 }
 
-// Ekstraksi seluruh URL gambar secara rekursif dari seluruh struktur JSON API
-function extractAllImages(data) {
-  const urls = new Set();
+// Ekstraksi URL Gambar secara langsung dan aman
+function getMediaImages(root, rawData) {
+  const images = [];
 
-  function walk(node, depth = 0) {
-    if (!node || depth > 8) return;
-
-    if (typeof node === "string") {
-      const lower = node.toLowerCase();
-      if (
-        (node.startsWith("http://") || node.startsWith("https://")) &&
-        (lower.includes(".jpg") ||
-          lower.includes(".jpeg") ||
-          lower.includes(".png") ||
-          lower.includes(".webp") ||
-          lower.includes("cdninstagram") ||
-          lower.includes("tiktokcdn") ||
-          lower.includes("image"))
-      ) {
-        urls.add(node);
-      }
-      return;
-    }
-
-    if (Array.isArray(node)) {
-      for (const item of node) walk(item, depth + 1);
-      return;
-    }
-
-    if (typeof node === "object") {
-      for (const key of Object.keys(node)) {
-        const k = key.toLowerCase();
-        // Telusuri kunci objek yang biasanya menyimpan gambar/slide
-        if (
-          k.includes("image") ||
-          k.includes("photo") ||
-          k.includes("carousel") ||
-          k.includes("slide") ||
-          k.includes("display") ||
-          k.includes("url") ||
-          k.includes("src") ||
-          k.includes("media") ||
-          k.includes("item")
-        ) {
-          walk(node[key], depth + 1);
-        }
+  const add = val => {
+    if (!val) return;
+    if (typeof val === "string" && val.startsWith("http")) {
+      if (!images.includes(val)) images.push(val);
+    } else if (typeof val === "object") {
+      const u = val.url || val.imageUrl || val.src || val.photo || val.display_url;
+      if (typeof u === "string" && u.startsWith("http") && !images.includes(u)) {
+        images.push(u);
       }
     }
+  };
+
+  const sources = [
+    root?.images,
+    root?.photos,
+    root?.carousel,
+    root?.carouselMedia,
+    root?.slides,
+    rawData?.data?.images,
+    rawData?.images
+  ];
+
+  for (const list of sources) {
+    if (Array.isArray(list)) list.forEach(add);
   }
 
-  walk(data);
-  return Array.from(urls);
+  add(root?.image);
+  add(root?.display_url);
+  add(root?.thumbnail);
+  add(root?.thumbnailUrl);
+
+  return images;
 }
 
 async function fetchDownloader(url) {
@@ -174,33 +157,28 @@ export default async function handler(req, res) {
 
     await sendTextMessage(chatId, "⏳ Mengunduh dan memproses media...");
 
-    const fullData = await fetchDownloader(text);
-    const root = fullData?.data?.mediaInfo || fullData?.mediaInfo || fullData?.result || fullData?.data || fullData;
+    const rawData = await fetchDownloader(text);
+    const root = rawData?.data?.mediaInfo || rawData?.mediaInfo || rawData?.data || rawData?.result || rawData;
 
-    const title = root?.title || fullData?.title || "Cloupanz Media";
+    const title = root?.title || rawData?.title || "Cloupanz Media";
     const videoUrl = root?.videoUrl || root?.video_url || root?.url || "";
     const audioUrl = root?.audioUrl || root?.audio_url || root?.music || "";
     const isPhotoUrl = text.includes("/photo/") || text.includes("/photo") || text.includes("/p/");
 
-    // Ambil seluruh foto yang ada di postingan
-    const images = extractAllImages(fullData);
+    const images = getMediaImages(root, rawData);
 
-    // 1. Jika link berupa postingan foto atau ditemukan gambar
-    if (isPhotoUrl || images.length > 0) {
-      if (images.length > 0) {
-        await sendPhotos(chatId, images, title);
-      } else {
-        throw new Error("Foto tidak ditemukan pada postingan ini.");
-      }
+    // 1. Postingan Foto / Carousel
+    if ((isPhotoUrl || images.length > 0) && images.length > 0) {
+      await sendPhotos(chatId, images, title);
     } 
-    // 2. Jika postingan adalah video
+    // 2. Postingan Video
     else if (videoUrl) {
       await sendVideo(chatId, videoUrl, title);
     } else {
-      throw new Error("Format media tidak didukung atau tidak ditemukan.");
+      throw new Error("Media tidak ditemukan.");
     }
 
-    // 3. Sertakan audio jika ada (misal pada slide TikTok)
+    // 3. Sertakan musik jika ada pada postingan foto
     if (audioUrl && images.length > 0) {
       await sendAudio(chatId, audioUrl, title).catch(() => {});
     }
