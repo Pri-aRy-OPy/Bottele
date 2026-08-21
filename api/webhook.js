@@ -330,7 +330,7 @@ async function sendAudio(chatId, audioUrl, title) {
 }
 
 // ==========================================
-// 3. MEDIA SCRAPERS (TikTok, Instagram, Pinterest)
+// 3. MEDIA SCRAPERS & DEEP EXTRACTOR
 // ==========================================
 
 async function downloadTikTok(url) {
@@ -352,48 +352,84 @@ async function downloadTikTok(url) {
   };
 }
 
-async function downloadInstagram(rawUrl) {
-  const cleanUrl = rawUrl.split("?")[0];
-  const isReels = cleanUrl.includes("/reel/") || cleanUrl.includes("/reels/");
+// Ekstraktor Rekursif Universal untuk mencari URL Video/Foto di JSON API Instagram
+function deepFindIgMedia(json) {
+  const videos = [];
+  const images = [];
 
-  // Engine 1: ahm7xmakki
-  try {
-    const api1 = `https://ahm7xmakki.com/api/alldl?url=` + encodeURIComponent(cleanUrl);
-    const res1 = await fetch(api1, { headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" } });
-    if (res1.ok) {
-      const json1 = await res1.json();
-      const root = json1?.data?.mediaInfo || json1?.mediaInfo || json1?.data || json1?.result || json1;
-      const title = root?.title || json1?.title || "Instagram Media";
+  function walk(val, depth = 0) {
+    if (!val || depth > 8) return;
 
-      // 1. Ekstraksi Video
-      let videoUrl = root?.videoUrl || root?.video_url || "";
-      if (!videoUrl && root?.url && (String(root?.type).includes("video") || isReels || root?.url.includes(".mp4"))) {
-        videoUrl = root.url;
-      }
-
-      // 2. Ekstraksi Carousel / Slides
-      let images = [];
-      const carousels = root?.carousel || root?.carouselMedia || root?.carousel_media || root?.medias || root?.images || root?.photos;
-      if (Array.isArray(carousels) && carousels.length > 0) {
-        for (const item of carousels) {
-          const u = typeof item === "string" ? item : (item?.url || item?.display_url || item?.imageUrl || item?.image_url);
-          if (u && typeof u === "string" && u.startsWith("http") && !images.includes(u)) {
-            images.push(u);
-          }
+    if (typeof val === "string") {
+      if (val.startsWith("http://") || val.startsWith("https://")) {
+        const lower = val.toLowerCase();
+        if (lower.includes(".mp4") || lower.includes("video_dash") || lower.includes("/v/") || lower.includes("mime=video")) {
+          if (!videos.includes(val)) videos.push(val);
+        } else if (lower.includes(".jpg") || lower.includes(".jpeg") || lower.includes(".png") || lower.includes(".webp") || lower.includes("cdninstagram")) {
+          if (!images.includes(val)) images.push(val);
         }
       }
+      return;
+    }
 
-      // Prioritas 1: Video murni atau Reels
-      if (videoUrl || isReels) {
+    if (Array.isArray(val)) {
+      for (const item of val) walk(item, depth + 1);
+      return;
+    }
+
+    if (typeof val === "object") {
+      const vidUrl = val.videoUrl || val.video_url || val.download_url || val.play_url || (val.type === "video" ? val.url : null);
+      if (vidUrl && typeof vidUrl === "string" && vidUrl.startsWith("http")) {
+        if (!videos.includes(vidUrl)) videos.push(vidUrl);
+      }
+
+      const imgUrl = val.imageUrl || val.image_url || val.display_url || (val.type === "image" ? val.url : null);
+      if (imgUrl && typeof imgUrl === "string" && imgUrl.startsWith("http")) {
+        if (!images.includes(imgUrl)) images.push(imgUrl);
+      }
+
+      for (const key of Object.keys(val)) {
+        walk(val[key], depth + 1);
+      }
+    }
+  }
+
+  walk(json);
+  return { videos, images };
+}
+
+async function downloadInstagram(rawUrl) {
+  const cleanUrl = rawUrl.split("?")[0].replace(/\/$/, "");
+  const isReels = cleanUrl.includes("/reel/") || cleanUrl.includes("/reels/");
+
+  const apis = [
+    `https://api.siputzx.my.id/api/d/ig?url=${encodeURIComponent(cleanUrl)}`,
+    `https://ahm7xmakki.com/api/alldl?url=${encodeURIComponent(cleanUrl)}`,
+    `https://api.vkrdownloader.com/server?vkr=${encodeURIComponent(cleanUrl)}`
+  ];
+
+  for (const api of apis) {
+    try {
+      const res = await fetch(api, {
+        headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+      });
+      if (!res.ok) continue;
+
+      const json = await res.json();
+      const { videos, images } = deepFindIgMedia(json);
+      const title = json?.title || json?.data?.title || json?.data?.mediaInfo?.title || "Instagram Media";
+
+      // 1. Jika Reels atau ditemukan file video valid
+      if ((isReels || videos.length > 0) && videos.length > 0) {
         return {
           type: "video",
           title,
           images: [],
-          videoUrl: videoUrl || root?.url || ""
+          videoUrl: videos[0]
         };
       }
 
-      // Prioritas 2: Slide Foto Banyak
+      // 2. Jika bukan video dan memiliki daftar foto
       if (images.length > 0) {
         return {
           type: "photo",
@@ -402,90 +438,40 @@ async function downloadInstagram(rawUrl) {
           videoUrl: ""
         };
       }
-
-      // Prioritas 3: Foto Tunggal
-      const singleImg = root?.image || root?.display_url || root?.thumbnail || root?.thumbnailUrl || root?.url;
-      if (singleImg && typeof singleImg === "string" && singleImg.startsWith("http")) {
-        return {
-          type: "photo",
-          title,
-          images: [singleImg],
-          videoUrl: ""
-        };
-      }
+    } catch {
+      // Lanjut ke API berikutnya jika error
     }
-  } catch (err) {
-    console.error("IG Engine 1 error:", err);
-  }
-
-  // Engine 2: siputzx fallback
-  try {
-    const api2 = `https://api.siputzx.my.id/api/d/ig?url=` + encodeURIComponent(cleanUrl);
-    const res2 = await fetch(api2, { headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" } });
-    if (res2.ok) {
-      const json2 = await res2.json();
-      const data = json2?.data;
-      if (Array.isArray(data) && data.length > 0) {
-        const vidItem = data.find(d => d.type === "video" || (d.url && d.url.includes(".mp4")));
-        if (vidItem || isReels) {
-          return {
-            type: "video",
-            title: "Instagram Video",
-            images: [],
-            videoUrl: vidItem?.url || data[0]?.url || ""
-          };
-        } else {
-          return {
-            type: "photo",
-            title: "Instagram Photo",
-            images: data.map(d => d.url || d.thumbnail).filter(Boolean),
-            videoUrl: ""
-          };
-        }
-      }
-    }
-  } catch (err) {
-    console.error("IG Engine 2 error:", err);
   }
 
   throw new Error("Gagal mengambil media Instagram. Pastikan akun tidak di-private.");
 }
 
 async function downloadPinterest(url) {
-  try {
-    const api = `https://api.siputzx.my.id/api/d/pinterest?url=` + encodeURIComponent(url);
-    const res = await fetch(api, { headers: { "User-Agent": "Mozilla/5.0" } });
-    const json = await res.json();
+  const apis = [
+    `https://api.siputzx.my.id/api/d/pinterest?url=${encodeURIComponent(url)}`,
+    `https://ahm7xmakki.com/api/alldl?url=${encodeURIComponent(url)}`
+  ];
 
-    if (json.status && json.data) {
-      const mediaUrl = json.data.url || json.data.image || json.data.video;
-      const isVideo = mediaUrl?.includes(".mp4") || Boolean(json.data.video);
+  for (const api of apis) {
+    try {
+      const res = await fetch(api, { headers: { "User-Agent": "Mozilla/5.0" } });
+      if (!res.ok) continue;
+      const json = await res.json();
 
-      return {
-        type: isVideo ? "video" : "photo",
-        title: json.data.title || "Pinterest Media",
-        images: isVideo ? [] : [mediaUrl],
-        videoUrl: isVideo ? mediaUrl : ""
-      };
-    }
-  } catch {}
+      const mediaUrl = json?.data?.url || json?.data?.image || json?.data?.video || json?.data?.mediaInfo?.videoUrl || json?.data?.mediaInfo?.image;
+      if (mediaUrl) {
+        const isVideo = mediaUrl.includes(".mp4") || Boolean(json?.data?.video);
+        return {
+          type: isVideo ? "video" : "photo",
+          title: json?.data?.title || json?.data?.mediaInfo?.title || "Pinterest Media",
+          images: isVideo ? [] : [mediaUrl],
+          videoUrl: isVideo ? mediaUrl : ""
+        };
+      }
+    } catch {}
+  }
 
-  const fallback = `https://ahm7xmakki.com/api/alldl?url=` + encodeURIComponent(url);
-  const fRes = await fetch(fallback, { headers: { "User-Agent": "Mozilla/5.0" } });
-  const fJson = await fRes.json();
-  const root = fJson?.data?.mediaInfo || fJson?.data || fJson;
-
-  const vid = root?.videoUrl || root?.video_url || "";
-  const img = root?.image || root?.thumbnail || root?.url || "";
-
-  if (!vid && !img) throw new Error("Gagal mengambil media Pinterest.");
-
-  return {
-    type: vid ? "video" : "photo",
-    title: root?.title || "Pinterest Media",
-    images: vid ? [] : [img],
-    videoUrl: vid
-  };
+  throw new Error("Gagal mengambil media Pinterest.");
 }
 
 // ==========================================
@@ -559,7 +545,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // B. Callback Query (Klik Tombol Inline)
+    // B. Callback Query (Tombol Inline)
     if (update?.callback_query) {
       const cb = update.callback_query;
       const chatId = cb.message?.chat?.id;
@@ -588,7 +574,7 @@ export default async function handler(req, res) {
 
         const text = `🎁 <b>Cara Menambah Kuota Download Gratis</b>\n\nBagikan tautan referral kamu ke teman atau grup. Setiap ada 1 teman yang bergabung menggunakan linkmu, kamu langsung mendapatkan <b>+3 kuota download harian</b>!\n\n🔗 <b>Tautan Referral Kamu:</b>\n<code>${refLink}</code>\n\n<i>Klik link di atas untuk menyalin.</i>`;
 
-         const shareKeyboard = {
+        const shareKeyboard = {
           inline_keyboard: [
             [{ text: "🚀 Bagikan ke Teman", url: `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent("Download video TikTok, Instagram, dan Pinterest gratis tanpa watermark di bot ini:")}` }],
             [{ text: "🔙 Kembali", callback_data: "btn_main_menu" }]
@@ -643,7 +629,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Fitur Admin Tersembunyi
+    // Command Admin Tersembunyi
     if (text.startsWith("/admin ")) {
       const pin = text.slice(7).trim();
       const result = await claimAdmin({ ...user, __adminPin: pin });
@@ -760,4 +746,4 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: false, error: error.message });
   }
-}                                                                                                                                    
+                                   }
