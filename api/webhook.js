@@ -3,14 +3,217 @@ export const config = {
 };
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
+const ADMIN_PIN = process.env.ADMIN_PIN;
+const DAILY_LIMIT = Number(process.env.DAILY_LIMIT || 5);
+
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
+// ==========================================
+// 1. HELPER FIRESTORE & DATABASE
+// ==========================================
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function firestoreBase() {
+  return `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+}
+
+function userDoc(id) {
+  return String(id);
+}
+
+async function getUser(id) {
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) return null;
+
+  try {
+    const url = `${firestoreBase()}/users/${encodeURIComponent(userDoc(id))}?key=${FIREBASE_API_KEY}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+async function saveUser(user) {
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY || !user?.id) return;
+
+  try {
+    const id = userDoc(user.id);
+    const old = await getUser(id);
+    const date = today();
+
+    let downloads = Number(old?.fields?.downloads?.integerValue || 0);
+    let lastReset = old?.fields?.last_reset?.stringValue || "";
+
+    if (lastReset !== date) {
+      downloads = 0;
+      lastReset = date;
+    }
+
+    const data = {
+      fields: {
+        telegram_id: { stringValue: String(user.id) },
+        username: { stringValue: user.username || "" },
+        first_name: { stringValue: user.first_name || "" },
+        last_name: { stringValue: user.last_name || "" },
+        downloads: { integerValue: String(downloads) },
+        last_reset: { stringValue: lastReset },
+        is_admin: { booleanValue: old?.fields?.is_admin?.booleanValue === true },
+        last_seen: { timestampValue: new Date().toISOString() }
+      }
+    };
+
+    const url = `${firestoreBase()}/users/${encodeURIComponent(id)}?key=${FIREBASE_API_KEY}`;
+    await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+  } catch (err) {
+    console.error("SaveUser Error:", err);
+  }
+}
+
+async function isAdmin(id) {
+  const user = await getUser(id);
+  return user?.fields?.is_admin?.booleanValue === true;
+}
+
+async function claimAdmin(user) {
+  if (!ADMIN_PIN) return { ok: false, message: "PIN admin belum dikonfigurasi di server." };
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) return { ok: false, message: "Firebase belum dikonfigurasi." };
+  if (user.__adminPin !== ADMIN_PIN) return { ok: false, message: "PIN salah." };
+
+  try {
+    const configUrl = `${firestoreBase()}/config/bot?key=${FIREBASE_API_KEY}`;
+    const check = await fetch(configUrl);
+
+    if (check.ok) {
+      const configData = await check.json();
+      const existing = configData?.fields?.admin_id?.stringValue;
+      if (existing && existing !== String(user.id)) {
+        return { ok: false, message: "Admin sudah terdaftar sebelumnya." };
+      }
+    }
+
+    await fetch(configUrl, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          admin_id: { stringValue: String(user.id) },
+          admin_username: { stringValue: user.username || "" },
+          created_at: { timestampValue: new Date().toISOString() }
+        }
+      })
+    });
+
+    const userId = String(user.id);
+    const userUrl = `${firestoreBase()}/users/${encodeURIComponent(userId)}?key=${FIREBASE_API_KEY}`;
+    const old = await getUser(userId);
+
+    await fetch(userUrl, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          telegram_id: { stringValue: userId },
+          username: { stringValue: user.username || "" },
+          first_name: { stringValue: user.first_name || "" },
+          last_name: { stringValue: user.last_name || "" },
+          downloads: { integerValue: String(old?.fields?.downloads?.integerValue || 0) },
+          last_reset: { stringValue: today() },
+          is_admin: { booleanValue: true },
+          last_seen: { timestampValue: new Date().toISOString() }
+        }
+      })
+    });
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: err.message || "Gagal menyimpan data admin." };
+  }
+}
+
+async function getDownloadStatus(id) {
+  const user = await getUser(id);
+  if (!user) {
+    return { downloads: 0, remaining: DAILY_LIMIT, admin: false };
+  }
+
+  const admin = user?.fields?.is_admin?.booleanValue === true;
+  if (admin) {
+    return { downloads: 0, remaining: Infinity, admin: true };
+  }
+
+  let downloads = Number(user?.fields?.downloads?.integerValue || 0);
+  const lastReset = user?.fields?.last_reset?.stringValue || "";
+
+  if (lastReset !== today()) {
+    downloads = 0;
+  }
+
+  return {
+    downloads,
+    remaining: Math.max(DAILY_LIMIT - downloads, 0),
+    admin: false
+  };
+}
+
+async function addDownload(user) {
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) return;
+
+  try {
+    const old = await getUser(user.id);
+    const date = today();
+
+    let downloads = Number(old?.fields?.downloads?.integerValue || 0);
+    const lastReset = old?.fields?.last_reset?.stringValue || "";
+
+    if (lastReset !== date) {
+      downloads = 0;
+    }
+
+    downloads++;
+
+    const url = `${firestoreBase()}/users/${encodeURIComponent(String(user.id))}?key=${FIREBASE_API_KEY}`;
+    await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          telegram_id: { stringValue: String(user.id) },
+          username: { stringValue: user.username || "" },
+          first_name: { stringValue: user.first_name || "" },
+          last_name: { stringValue: user.last_name || "" },
+          downloads: { integerValue: String(downloads) },
+          last_reset: { stringValue: date },
+          is_admin: { booleanValue: old?.fields?.is_admin?.booleanValue === true },
+          last_seen: { timestampValue: new Date().toISOString() }
+        }
+      })
+    });
+  } catch (err) {
+    console.error("AddDownload Error:", err);
+  }
+}
+
+// ==========================================
+// 2. TELEGRAM SENDER (BUFFER / MULTIPART)
+// ==========================================
+
 async function sendTextMessage(chatId, text) {
-  await fetch(`${TELEGRAM_API}/sendMessage`, {
+  const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text })
-  }).catch(() => {});
+  });
+  return await res.json().catch(() => ({}));
 }
 
 async function getFileBlob(url) {
@@ -35,7 +238,7 @@ async function sendVideo(chatId, videoUrl, title) {
 }
 
 async function sendPhotos(chatId, imageUrls, title) {
-  const urls = imageUrls.slice(0, 10); // Batas album Telegram
+  const urls = imageUrls.slice(0, 10);
 
   if (urls.length === 1) {
     const blob = await getFileBlob(urls[0]);
@@ -83,7 +286,10 @@ async function sendAudio(chatId, audioUrl, title) {
   await fetch(`${TELEGRAM_API}/sendAudio`, { method: "POST", body: form });
 }
 
-// Parser TikTok (TikWM)
+// ==========================================
+// 3. MEDIA SCRAPERS & ENGINE
+// ==========================================
+
 async function downloadTikTok(url) {
   const res = await fetch("https://www.tikwm.com/api/?url=" + encodeURIComponent(url), {
     headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" }
@@ -105,7 +311,6 @@ async function downloadTikTok(url) {
   };
 }
 
-// Parser Helper untuk Ekstraksi Semua Media Instagram
 function parseIgMedia(json) {
   const images = [];
   const videos = [];
@@ -169,12 +374,10 @@ function parseIgMedia(json) {
   };
 }
 
-// Downloader Instagram dengan Sistem Fallback Multi-API
 async function downloadInstagram(rawUrl) {
   const cleanUrl = rawUrl.split("?")[0];
   const isReels = cleanUrl.includes("/reel/") || cleanUrl.includes("/reels/");
 
-  // 1. Coba Engine Primer
   try {
     const api1 = `https://ahm7xmakki.com/api/alldl?url=` + encodeURIComponent(cleanUrl);
     const res1 = await fetch(api1, {
@@ -184,7 +387,6 @@ async function downloadInstagram(rawUrl) {
       const json1 = await res1.json();
       const parsed = parseIgMedia(json1);
 
-      // Jika berhasil dapat multi-foto (>1) atau video reels murni
       if (parsed.images.length > 1 || isReels || (parsed.videos.length > 0 && parsed.images.length === 0)) {
         const isVid = isReels || (parsed.videos.length > 0 && parsed.images.length === 0);
         return {
@@ -197,7 +399,6 @@ async function downloadInstagram(rawUrl) {
     }
   } catch {}
 
-  // 2. Coba Engine Sekunder (Khusus Ekstraksi Slide/Carousel)
   try {
     const api2 = `https://api.siputzx.my.id/api/d/ig?url=` + encodeURIComponent(cleanUrl);
     const res2 = await fetch(api2, {
@@ -219,7 +420,6 @@ async function downloadInstagram(rawUrl) {
     }
   } catch {}
 
-  // 3. Coba Engine Tersier
   try {
     const api3 = `https://api.vkrdownloader.com/server?vkr=` + encodeURIComponent(cleanUrl);
     const res3 = await fetch(api3, {
@@ -244,21 +444,97 @@ async function downloadInstagram(rawUrl) {
   throw new Error("Gagal mengambil media Instagram. Pastikan akun tidak di-private.");
 }
 
+// ==========================================
+// 4. MAIN HANDLER & BOT COMMANDS
+// ==========================================
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(200).json({ ok: true, status: "online" });
 
   try {
+    if (!TELEGRAM_TOKEN) {
+      return res.status(500).json({ ok: false, error: "TELEGRAM_TOKEN belum dipasang." });
+    }
+
     const update = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const message = update?.message;
-    if (!message?.chat?.id || !message?.text) return res.status(200).json({ ok: true });
+    if (!message?.chat?.id) return res.status(200).json({ ok: true });
 
     const chatId = message.chat.id;
-    const text = message.text.trim();
+    const user = message.from;
+    const text = message.text?.trim() || "";
 
-    if (text === "/start" || text === "/help") {
-      await sendTextMessage(chatId, "👋 Kirim link TikTok atau Instagram untuk mengunduh media.");
+    // Simpan atau perbarui data pengguna di database
+    await saveUser(user);
+
+    // Command: /start
+    if (text === "/start" || text.startsWith("/start ")) {
+      await sendTextMessage(
+        chatId,
+        `Halo ${user?.first_name || "kak"} 👋\n\nKirim link TikTok atau Instagram untuk mengunduh media.\n\n📌 Limit: ${DAILY_LIMIT}/hari\n\n/limit - Cek sisa kuota\n/help - Bantuan`
+      );
       return res.status(200).json({ ok: true });
     }
+
+    // Command: /help
+    if (text === "/help") {
+      await sendTextMessage(
+        chatId,
+        `📖 Panduan Penggunaan\n\n1. Tempel link postingan TikTok atau Instagram.\n2. Bot akan mendeteksi format (Video, Album Foto, atau Audio).\n3. Media langsung dikirimkan ke chat ini.\n\n/limit - Cek kuota download\n/admin <PIN> - Aktivasi akses admin tanpa batas`
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    // Command: /limit atau /me
+    if (text === "/limit" || text === "/me") {
+      const status = await getDownloadStatus(user.id);
+      const limitMsg = status.admin
+        ? `👑 Admin Cloupanz\n\nLimit: ∞ Tanpa batas`
+        : `📊 Kuota Download Cloupanz\n\nPenggunaan hari ini: ${status.downloads}/${DAILY_LIMIT}\nSisa kuota: ${status.remaining} kali`;
+
+      await sendTextMessage(chatId, limitMsg);
+      return res.status(200).json({ ok: true });
+    }
+
+    // Command: /admin <PIN>
+    if (text.startsWith("/admin ")) {
+      const pin = text.slice(7).trim();
+      const result = await claimAdmin({ ...user, __adminPin: pin });
+
+      await sendTextMessage(
+        chatId,
+        result.ok ? `👑 Akses Admin Berhasil Diaktifkan!\n\nKamu sekarang memiliki akses tanpa batas kuota.` : `❌ ${result.message}`
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    // Command: /stats (Khusus Admin)
+    if (text === "/stats") {
+      const admin = await isAdmin(user.id);
+      if (!admin) {
+        await sendTextMessage(chatId, "❌ Perintah ini khusus admin.");
+        return res.status(200).json({ ok: true });
+      }
+
+      const dbUrl = `${firestoreBase()}/users?key=${FIREBASE_API_KEY}`;
+      const resp = await fetch(dbUrl);
+      const dbData = await resp.json();
+      const userDocs = dbData.documents || [];
+
+      let totalDownloads = 0;
+      for (const item of userDocs) {
+        totalDownloads += Number(item?.fields?.downloads?.integerValue || 0);
+      }
+
+      await sendTextMessage(
+        chatId,
+        `📊 Statistik Cloupanz\n\n👥 Total Pengguna: ${userDocs.length}\n📥 Total Download Hari Ini: ${totalDownloads}\n👑 Status Admin: Aktif`
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    // Abaikan jika tidak ada teks pesan
+    if (!text) return res.status(200).json({ ok: true });
 
     const isTikTok = text.includes("tiktok.com");
     const isInstagram = text.includes("instagram.com") || text.includes("instagr.am");
@@ -268,20 +544,44 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    await sendTextMessage(chatId, "⏳ Mengunduh dan memproses media...");
+    // Cek Batas Limit Harian
+    const status = await getDownloadStatus(user.id);
+    if (!status.admin && status.remaining <= 0) {
+      await sendTextMessage(chatId, `❌ Kuota download harian kamu sudah habis (${DAILY_LIMIT}/${DAILY_LIMIT}).\n\nCoba lagi besok atau gunakan akun admin.`);
+      return res.status(200).json({ ok: true });
+    }
+
+    const processing = await sendTextMessage(chatId, `⏳ Mengunduh dan memproses media...`);
 
     const media = isTikTok ? await downloadTikTok(text) : await downloadInstagram(text);
 
+    // Pengiriman Foto / Album
     if (media.type === "photo" && media.images.length > 0) {
       await sendPhotos(chatId, media.images, media.title);
 
       if (media.audioUrl) {
         await sendAudio(chatId, media.audioUrl, media.title).catch(() => {});
       }
-    } else if (media.type === "video" && media.videoUrl) {
+    } 
+    // Pengiriman Video
+    else if (media.type === "video" && media.videoUrl) {
       await sendVideo(chatId, media.videoUrl, media.title);
     } else {
       throw new Error("Media tidak ditemukan.");
+    }
+
+    // Catat penambahan unduhan ke database (hanya untuk non-admin)
+    if (!status.admin) {
+      await addDownload(user);
+    }
+
+    // Hapus pesan loading jika berhasil terkirim
+    if (processing?.result?.message_id) {
+      await fetch(`${TELEGRAM_API}/deleteMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, message_id: processing.result.message_id })
+      }).catch(() => {});
     }
 
     return res.status(200).json({ ok: true });
@@ -293,3 +593,4 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: false, error: error.message });
   }
 }
+  
