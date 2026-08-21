@@ -46,6 +46,10 @@ export default async function handler(req, res) {
       });
     }
 
+    const isPhotoUrl =
+      parsedUrl.pathname.includes("/photo") ||
+      url.includes("/photo/");
+
     const apiUrl =
       "https://ahm7xmakki.com/api/alldl?url=" +
       encodeURIComponent(url);
@@ -154,7 +158,6 @@ export default async function handler(req, res) {
         return;
       }
 
-      // Mempertahankan gambar meskipun URL sama dengan thumbnail
       if (!images.includes(value)) {
         images.push(value);
       }
@@ -229,6 +232,10 @@ export default async function handler(req, res) {
       apiData?.photo
     );
 
+    if (images.length === 0 && isPhotoUrl && isValidUrl(thumbnail)) {
+      addImage(thumbnail);
+    }
+
     const explicitType = String(
       root?.type ||
       root?.mediaType ||
@@ -239,30 +246,23 @@ export default async function handler(req, res) {
       ""
     ).toLowerCase();
 
-    const explicitVideo =
-      explicitType.includes("video");
-
+    const explicitVideo = explicitType.includes("video") && !isPhotoUrl;
     const explicitImage =
       explicitType.includes("image") ||
       explicitType.includes("photo") ||
-      explicitType.includes("carousel");
+      explicitType.includes("carousel") ||
+      isPhotoUrl;
 
     let type = "unknown";
 
-    if (explicitVideo && videoUrl) {
-      type = "video";
-    } else if (explicitImage && images.length) {
-      type =
-        images.length > 1
-          ? "carousel"
-          : "image";
-    } else if (videoUrl) {
+    if (explicitImage && images.length) {
+      type = images.length > 1 ? "carousel" : "image";
+    } else if (explicitVideo && videoUrl) {
       type = "video";
     } else if (images.length) {
-      type =
-        images.length > 1
-          ? "carousel"
-          : "image";
+      type = images.length > 1 ? "carousel" : "image";
+    } else if (videoUrl) {
+      type = "video";
     } else if (audioUrl) {
       type = "audio";
     }
@@ -326,4 +326,4 @@ export default async function handler(req, res) {
         "Gagal mengambil media"
     });
   }
-      }
+}
