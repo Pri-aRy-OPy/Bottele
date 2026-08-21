@@ -372,19 +372,6 @@ function detectPlatform(value) {
   }
 }
 
-function validUrl(value) {
-  try {
-    const u = new URL(value);
-
-    return (
-      u.protocol === "https:" ||
-      u.protocol === "http:"
-    );
-  } catch {
-    return false;
-  }
-}
-
 function isHttpUrl(value) {
   try {
     const u = new URL(value);
@@ -449,7 +436,6 @@ async function proxyMedia(req, res) {
   const sigBuf = Buffer.from(signature, "hex");
   const expBuf = Buffer.from(expected, "hex");
 
-  // Mencegah crash jika panjang buffer berbeda
   if (
     sigBuf.length !== expBuf.length ||
     !crypto.timingSafeEqual(sigBuf, expBuf)
@@ -572,7 +558,9 @@ function collectImages(root, data) {
   const add = value => {
     if (!isHttpUrl(value)) return;
 
-    images.push(String(value));
+    if (!images.includes(String(value))) {
+      images.push(String(value));
+    }
   };
 
   const addObject = item => {
@@ -702,7 +690,7 @@ function firstUrl(...values) {
   return "";
 }
 
-function detectMediaType(root, data, videoUrl, audioUrl, images) {
+function detectMediaType(root, data, videoUrl, audioUrl, images, isPhotoUrl) {
   const explicit = String(
     root?.type ||
     root?.mediaType ||
@@ -713,34 +701,27 @@ function detectMediaType(root, data, videoUrl, audioUrl, images) {
     ""
   ).toLowerCase();
 
-  if (
-    explicit.includes("video") &&
-    videoUrl
-  ) {
-    return "video";
+  const explicitVideo = explicit.includes("video") && !isPhotoUrl;
+  const explicitImage =
+    explicit.includes("image") ||
+    explicit.includes("photo") ||
+    explicit.includes("carousel") ||
+    isPhotoUrl;
+
+  if (explicitImage && images.length) {
+    return images.length > 1 ? "carousel" : "image";
   }
 
-  if (
-    (
-      explicit.includes("image") ||
-      explicit.includes("photo") ||
-      explicit.includes("carousel")
-    ) &&
-    images.length
-  ) {
-    return images.length > 1
-      ? "carousel"
-      : "image";
-  }
-
-  if (videoUrl) {
+  if (explicitVideo && videoUrl) {
     return "video";
   }
 
   if (images.length) {
-    return images.length > 1
-      ? "carousel"
-      : "image";
+    return images.length > 1 ? "carousel" : "image";
+  }
+
+  if (videoUrl) {
+    return "video";
   }
 
   if (audioUrl) {
@@ -751,8 +732,8 @@ function detectMediaType(root, data, videoUrl, audioUrl, images) {
 }
 
 async function downloadInfo(url) {
-  const data =
-    await fetchDownloader(url);
+  const isPhotoUrl = url.includes("/photo/") || url.includes("/photo");
+  const data = await fetchDownloader(url);
 
   const root =
     data?.mediaInfo ||
@@ -789,7 +770,8 @@ async function downloadInfo(url) {
     root?.url &&
     String(root?.type || "")
       .toLowerCase()
-      .includes("video")
+      .includes("video") &&
+    !isPhotoUrl
   ) {
     videoUrl = root.url;
   }
@@ -804,57 +786,44 @@ async function downloadInfo(url) {
     audioUrl = root.url;
   }
 
-  const images =
-    collectImages(root, data);
+  const images = collectImages(root, data);
 
-  const type =
-    detectMediaType(
-      root,
-      data,
-      videoUrl,
-      audioUrl,
-      images
-    );
+  const thumbnail =
+    root?.thumbnail ||
+    root?.thumbnailUrl ||
+    root?.thumbnail_url ||
+    data?.thumbnail ||
+    "";
 
-  if (
-    type === "video" &&
-    !videoUrl
-  ) {
-    throw new Error(
-      "Video tidak ditemukan."
-    );
+  if (images.length === 0 && isPhotoUrl && isHttpUrl(thumbnail)) {
+    images.push(thumbnail);
   }
 
-  if (
-    (
-      type === "image" ||
-      type === "carousel"
-    ) &&
-    !images.length
-  ) {
-    throw new Error(
-      "Foto tidak ditemukan."
-    );
+  const type = detectMediaType(
+    root,
+    data,
+    videoUrl,
+    audioUrl,
+    images,
+    isPhotoUrl
+  );
+
+  if (type === "video" && !videoUrl) {
+    throw new Error("Video tidak ditemukan.");
   }
 
-  if (
-    type === "audio" &&
-    !audioUrl
-  ) {
-    throw new Error(
-      "Audio tidak ditemukan."
-    );
+  if ((type === "image" || type === "carousel") && !images.length) {
+    throw new Error("Foto tidak ditemukan.");
+  }
+
+  if (type === "audio" && !audioUrl) {
+    throw new Error("Audio tidak ditemukan.");
   }
 
   return {
     type,
     title,
-    thumbnail:
-      root?.thumbnail ||
-      root?.thumbnailUrl ||
-      root?.thumbnail_url ||
-      data?.thumbnail ||
-      "",
+    thumbnail,
     videoUrl,
     audioUrl,
     images
@@ -1121,7 +1090,6 @@ ${status.remaining} download`
     }
   );
 }
-
 async function sendStats(
   chatId,
   admin
@@ -1326,7 +1294,7 @@ export default async function handler(
       });
     }
 
-    if (!validUrl(text)) {
+    if (!isHttpUrl(text)) {
       await telegram(
         "sendMessage",
         {
@@ -1475,4 +1443,4 @@ ${error?.message || "Terjadi kesalahan."}`
         "Webhook error."
     });
   }
-  }
+        }
