@@ -51,14 +51,12 @@ async function saveUser(user, refBy = null) {
     let referrals = Number(old?.fields?.referrals?.integerValue || 0);
     let lastReset = old?.fields?.last_reset?.stringValue || "";
 
-    // Reset harian
     if (lastReset !== date) {
       downloads = 0;
-      bonusLimit = 0; // Reset bonus harian
+      bonusLimit = 0;
       lastReset = date;
     }
 
-    // Jika pengguna baru mendaftar dari link referral
     if (!old && refBy && refBy !== String(user.id)) {
       await addReferralBonus(refBy, user.first_name || "Teman");
     }
@@ -110,7 +108,6 @@ async function addReferralBonus(referrerId, newUserName) {
       })
     });
 
-    // Kirim notifikasi bonus ke pengundang
     await sendTextMessage(
       referrerId,
       `🎉 <b>Selamat!</b> <b>${newUserName}</b> bergabung lewat tautanmu.\n🎁 Kuota download kamu bertambah <b>+3 limit</b> hari ini!`
@@ -159,12 +156,12 @@ async function claimAdmin(user) {
 async function getDownloadStatus(id) {
   const user = await getUser(id);
   if (!user) {
-    return { downloads: 0, maxLimit: DAILY_LIMIT, remaining: DAILY_LIMIT, admin: false };
+    return { downloads: 0, bonusLimit: 0, maxLimit: DAILY_LIMIT, remaining: DAILY_LIMIT, admin: false };
   }
 
   const admin = user?.fields?.is_admin?.booleanValue === true;
   if (admin) {
-    return { downloads: 0, maxLimit: Infinity, remaining: Infinity, admin: true };
+    return { downloads: 0, bonusLimit: 0, maxLimit: Infinity, remaining: Infinity, admin: true };
   }
 
   let downloads = Number(user?.fields?.downloads?.integerValue || 0);
@@ -211,7 +208,7 @@ async function addDownload(user) {
 }
 
 // ==========================================
-// 2. TELEGRAM SENDER & UI UTILITIES
+// 2. TELEGRAM SENDER & PROGRESS
 // ==========================================
 
 async function sendTextMessage(chatId, text, replyMarkup = null) {
@@ -355,95 +352,101 @@ async function downloadTikTok(url) {
   };
 }
 
-function parseIgMedia(json) {
-  const images = [];
-  const videos = [];
-
-  const checkAndAdd = item => {
-    if (!item) return;
-    if (typeof item === "string" && item.startsWith("http")) {
-      const lower = item.toLowerCase();
-      if (lower.includes(".mp4") || lower.includes("video_dash") || lower.includes("/v/")) {
-        if (!videos.includes(item)) videos.push(item);
-      } else {
-        if (!images.includes(item)) images.push(item);
-      }
-      return;
-    }
-    if (typeof item === "object") {
-      const target = item.url || item.download_url || item.display_url || item.imageUrl || item.image_url || item.video_url || item.src;
-      if (typeof target === "string" && target.startsWith("http")) {
-        const isVid = item.type === "video" || target.includes(".mp4");
-        if (isVid) {
-          if (!videos.includes(target)) videos.push(target);
-        } else {
-          if (!images.includes(target)) images.push(target);
-        }
-      }
-    }
-  };
-
-  const root = json?.data?.mediaInfo || json?.mediaInfo || json?.data || json?.result || json;
-  const containers = [
-    root?.carousel, root?.carouselMedia, root?.medias, root?.images, root?.photos, root?.items,
-    Array.isArray(root) ? root : null, Array.isArray(json?.data) ? json.data : null
-  ];
-
-  for (const arr of containers) {
-    if (Array.isArray(arr) && arr.length > 0) arr.forEach(checkAndAdd);
-  }
-
-  if (images.length === 0 && videos.length === 0) {
-    checkAndAdd(root?.videoUrl || root?.video_url);
-    checkAndAdd(root?.image || root?.display_url || root?.thumbnail || root?.url);
-  }
-
-  return {
-    images,
-    videos,
-    title: root?.title || json?.title || "Instagram Media"
-  };
-}
-
 async function downloadInstagram(rawUrl) {
   const cleanUrl = rawUrl.split("?")[0];
   const isReels = cleanUrl.includes("/reel/") || cleanUrl.includes("/reels/");
 
+  // Engine 1: ahm7xmakki
   try {
     const api1 = `https://ahm7xmakki.com/api/alldl?url=` + encodeURIComponent(cleanUrl);
     const res1 = await fetch(api1, { headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" } });
     if (res1.ok) {
       const json1 = await res1.json();
-      const parsed = parseIgMedia(json1);
-      if (parsed.images.length > 1 || isReels || (parsed.videos.length > 0 && parsed.images.length === 0)) {
-        const isVid = isReels || (parsed.videos.length > 0 && parsed.images.length === 0);
+      const root = json1?.data?.mediaInfo || json1?.mediaInfo || json1?.data || json1?.result || json1;
+      const title = root?.title || json1?.title || "Instagram Media";
+
+      // 1. Ekstraksi Video
+      let videoUrl = root?.videoUrl || root?.video_url || "";
+      if (!videoUrl && root?.url && (String(root?.type).includes("video") || isReels || root?.url.includes(".mp4"))) {
+        videoUrl = root.url;
+      }
+
+      // 2. Ekstraksi Carousel / Slides
+      let images = [];
+      const carousels = root?.carousel || root?.carouselMedia || root?.carousel_media || root?.medias || root?.images || root?.photos;
+      if (Array.isArray(carousels) && carousels.length > 0) {
+        for (const item of carousels) {
+          const u = typeof item === "string" ? item : (item?.url || item?.display_url || item?.imageUrl || item?.image_url);
+          if (u && typeof u === "string" && u.startsWith("http") && !images.includes(u)) {
+            images.push(u);
+          }
+        }
+      }
+
+      // Prioritas 1: Video murni atau Reels
+      if (videoUrl || isReels) {
         return {
-          type: isVid ? "video" : "photo",
-          title: parsed.title,
-          images: isVid ? [] : parsed.images,
-          videoUrl: isVid ? (parsed.videos[0] || "") : ""
+          type: "video",
+          title,
+          images: [],
+          videoUrl: videoUrl || root?.url || ""
+        };
+      }
+
+      // Prioritas 2: Slide Foto Banyak
+      if (images.length > 0) {
+        return {
+          type: "photo",
+          title,
+          images,
+          videoUrl: ""
+        };
+      }
+
+      // Prioritas 3: Foto Tunggal
+      const singleImg = root?.image || root?.display_url || root?.thumbnail || root?.thumbnailUrl || root?.url;
+      if (singleImg && typeof singleImg === "string" && singleImg.startsWith("http")) {
+        return {
+          type: "photo",
+          title,
+          images: [singleImg],
+          videoUrl: ""
         };
       }
     }
-  } catch {}
+  } catch (err) {
+    console.error("IG Engine 1 error:", err);
+  }
 
+  // Engine 2: siputzx fallback
   try {
     const api2 = `https://api.siputzx.my.id/api/d/ig?url=` + encodeURIComponent(cleanUrl);
     const res2 = await fetch(api2, { headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" } });
     if (res2.ok) {
       const json2 = await res2.json();
-      const parsed2 = parseIgMedia(json2);
-      if (parsed2.images.length > 0 || parsed2.videos.length > 0) {
-        const isVid = isReels || (parsed2.videos.length > 0 && parsed2.images.length === 0);
-        return {
-          type: isVid ? "video" : "photo",
-          title: parsed2.title,
-          images: isVid ? [] : parsed2.images,
-          videoUrl: isVid ? (parsed2.videos[0] || "") : ""
-        };
+      const data = json2?.data;
+      if (Array.isArray(data) && data.length > 0) {
+        const vidItem = data.find(d => d.type === "video" || (d.url && d.url.includes(".mp4")));
+        if (vidItem || isReels) {
+          return {
+            type: "video",
+            title: "Instagram Video",
+            images: [],
+            videoUrl: vidItem?.url || data[0]?.url || ""
+          };
+        } else {
+          return {
+            type: "photo",
+            title: "Instagram Photo",
+            images: data.map(d => d.url || d.thumbnail).filter(Boolean),
+            videoUrl: ""
+          };
+        }
       }
     }
-  } catch {}
+  } catch (err) {
+    console.error("IG Engine 2 error:", err);
+  }
 
   throw new Error("Gagal mengambil media Instagram. Pastikan akun tidak di-private.");
 }
@@ -467,7 +470,6 @@ async function downloadPinterest(url) {
     }
   } catch {}
 
-  // Fallback Pinterest
   const fallback = `https://ahm7xmakki.com/api/alldl?url=` + encodeURIComponent(url);
   const fRes = await fetch(fallback, { headers: { "User-Agent": "Mozilla/5.0" } });
   const fJson = await fRes.json();
@@ -513,7 +515,7 @@ function getBackKeyboard() {
 }
 
 // ==========================================
-// 5. MAIN HANDLER (Webhook, Inline Query, Broadcast)
+// 5. MAIN HANDLER
 // ==========================================
 
 export default async function handler(req, res) {
@@ -526,7 +528,7 @@ export default async function handler(req, res) {
 
     const update = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
-    // --- A. HANDLE INLINE QUERY (@bot <link>) ---
+    // A. Inline Query (@bot <link>)
     if (update?.inline_query) {
       const q = update.inline_query;
       const queryText = q.query.trim();
@@ -557,7 +559,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // --- B. HANDLE CALLBACK QUERY (KLIK TOMBOL) ---
+    // B. Callback Query (Klik Tombol Inline)
     if (update?.callback_query) {
       const cb = update.callback_query;
       const chatId = cb.message?.chat?.id;
@@ -570,7 +572,6 @@ export default async function handler(req, res) {
         body: JSON.stringify({ callback_query_id: cb.id })
       }).catch(() => {});
 
-      // Menu: Cek Limit
       if (cb.data === "btn_limit" && chatId) {
         const status = await getDownloadStatus(userId);
         const text = status.admin
@@ -580,7 +581,6 @@ export default async function handler(req, res) {
         await editMessage(chatId, messageId, text, getBackKeyboard());
       }
 
-     // Menu: Tambah Limit Gratis (Referral)
       if (cb.data === "btn_tambah_limit" && chatId) {
         const botInfo = await fetch(`${TELEGRAM_API}/getMe`).then(r => r.json());
         const botUsername = botInfo?.result?.username || "bot";
@@ -588,7 +588,7 @@ export default async function handler(req, res) {
 
         const text = `🎁 <b>Cara Menambah Kuota Download Gratis</b>\n\nBagikan tautan referral kamu ke teman atau grup. Setiap ada 1 teman yang bergabung menggunakan linkmu, kamu langsung mendapatkan <b>+3 kuota download harian</b>!\n\n🔗 <b>Tautan Referral Kamu:</b>\n<code>${refLink}</code>\n\n<i>Klik link di atas untuk menyalin.</i>`;
 
-        const shareKeyboard = {
+         const shareKeyboard = {
           inline_keyboard: [
             [{ text: "🚀 Bagikan ke Teman", url: `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent("Download video TikTok, Instagram, dan Pinterest gratis tanpa watermark di bot ini:")}` }],
             [{ text: "🔙 Kembali", callback_data: "btn_main_menu" }]
@@ -598,13 +598,11 @@ export default async function handler(req, res) {
         await editMessage(chatId, messageId, text, shareKeyboard);
       }
 
-      // Menu: Panduan
       if (cb.data === "btn_help" && chatId) {
         const text = `📖 <b>Panduan Penggunaan Cloupanz</b>\n\n1. Salin tautan postingan dari <b>TikTok</b>, <b>Instagram</b>, atau <b>Pinterest</b>.\n2. Kirim/tempel link tersebut ke ruang obrolan ini.\n3. Bot akan langsung memproses dan mengirimkan media aslinya (Video/Album Foto/Musik).\n\n💡 <i>Kamu juga bisa mengetik <code>@namabot &lt;link&gt;</code> di grup mana saja!</i>`;
         await editMessage(chatId, messageId, text, getBackKeyboard());
       }
 
-      // Kembali ke Menu Utama
       if (cb.data === "btn_main_menu" && chatId) {
         const text = `Halo <b>${cb.from?.first_name || "kak"}</b> 👋\n\nKirimkan tautan <b>TikTok</b>, <b>Instagram</b>, atau <b>Pinterest</b> untuk mengunduh media.`;
         await editMessage(chatId, messageId, text, getMainMenuKeyboard());
@@ -620,7 +618,6 @@ export default async function handler(req, res) {
     const user = message.from;
     const text = message.text?.trim() || "";
 
-    // Deteksi Parameter Referral pada /start
     let refBy = null;
     if (text.startsWith("/start ref_")) {
       refBy = text.split("ref_")[1]?.trim();
@@ -628,7 +625,6 @@ export default async function handler(req, res) {
 
     await saveUser(user, refBy);
 
-    // Command: /start
     if (text.startsWith("/start")) {
       await sendTextMessage(
         chatId,
@@ -638,7 +634,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Command: /help
     if (text === "/help") {
       await sendTextMessage(
         chatId,
@@ -648,7 +643,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // --- FITUR ADMIN TERSEMBUNYI ---
+    // Fitur Admin Tersembunyi
     if (text.startsWith("/admin ")) {
       const pin = text.slice(7).trim();
       const result = await claimAdmin({ ...user, __adminPin: pin });
@@ -659,12 +654,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Command Broadcast (Khusus Admin)
     if (text.startsWith("/broadcast ")) {
       const admin = await isAdmin(user.id);
-      if (!admin) {
-        return res.status(200).json({ ok: true }); // Diamkan jika bukan admin
-      }
+      if (!admin) return res.status(200).json({ ok: true });
 
       const broadcastMsg = text.slice(11).trim();
       if (!broadcastMsg) {
@@ -694,7 +686,6 @@ export default async function handler(req, res) {
 
     if (!text) return res.status(200).json({ ok: true });
 
-    // Validasi Platform
     const isTikTok = text.includes("tiktok.com");
     const isInstagram = text.includes("instagram.com") || text.includes("instagr.am");
     const isPinterest = text.includes("pinterest.com") || text.includes("pin.it");
@@ -708,7 +699,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Cek Batas Kuota
     const status = await getDownloadStatus(user.id);
     if (!status.admin && status.remaining <= 0) {
       await sendTextMessage(
@@ -723,7 +713,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Animasi Progress Bar Bertahap
     const initMsg = await sendTextMessage(chatId, `⏳ <b>Menghubungkan...</b>\n\n<code>[░░░░░░░░░░] 0%</code>\n\n☁️ Cloupanz`);
     const progressMsgId = initMsg?.result?.message_id;
 
@@ -744,7 +733,6 @@ export default async function handler(req, res) {
       await updateProgress(chatId, progressMsgId, 95, "Mengirim ke chat...");
     }
 
-    // Eksekusi Pengiriman Media
     if (media.type === "photo" && media.images.length > 0) {
       await sendPhotos(chatId, media.images, media.title);
       if (media.audioUrl) {
@@ -756,7 +744,6 @@ export default async function handler(req, res) {
       throw new Error("Media tidak ditemukan atau postingan bersifat privat.");
     }
 
-    // Catat pemakaian kuota jika bukan admin
     if (!status.admin) {
       await addDownload(user);
     }
@@ -773,4 +760,4 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: false, error: error.message });
   }
-}
+}                                                                                                                                    
