@@ -1,592 +1,805 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#0b0712">
-<meta name="description" content="Cloupanz Media Downloader">
-<title>Cloupanz — Download Media</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloupanz Media Downloader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{min-height:100vh;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;background:radial-gradient(circle at 50% -10%,#32115b 0%,#170b27 35%,#08070d 72%)}
-button,input{font:inherit}
-a{color:inherit;text-decoration:none}
-.container{width:min(1180px,calc(100% - 32px));margin:auto}
-.navbar{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)}
-.brand{display:flex;align-items:center;gap:14px;font-size:25px;font-weight:800}
-.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:27px;background:linear-gradient(145deg,#aa5cff,#7227df);box-shadow:0 10px 35px rgba(140,55,255,.35)}
-.admin{color:#aaa3b8;font-size:16px}
-.hero{text-align:center;padding:75px 0 35px}
-.badge{display:inline-flex;align-items:center;gap:8px;padding:10px 17px;border:1px solid rgba(177,99,255,.25);border-radius:999px;background:rgba(123,43,208,.12);color:#d2b4ff}
-.dot{width:10px;height:10px;border-radius:50%;background:#46e98b;box-shadow:0 0 12px #46e98b}
-.hero h1{margin:28px auto 18px;max-width:850px;font-size:clamp(44px,7vw,76px);line-height:1.02;letter-spacing:-3px}
-.gradient{background:linear-gradient(90deg,#fff,#b56aff,#8737f2);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p{max-width:720px;margin:auto;color:#aaa5b3;font-size:19px;line-height:1.7}
-.download-box{width:min(850px,100%);margin:40px auto 0;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:25px;background:rgba(17,14,24,.86);box-shadow:0 25px 70px rgba(0,0,0,.3)}
-.form{display:flex;gap:10px}
-.input-wrap{flex:1}
-input{width:100%;height:62px;padding:0 20px;border:1px solid rgba(255,255,255,.08);outline:none;border-radius:17px;background:#0b0910;color:#fff;font-size:16px}
-input:focus{border-color:#9748ff;box-shadow:0 0 0 3px rgba(151,72,255,.1)}
-input::placeholder{color:#68636e}
-.download-btn{min-width:175px;height:62px;border:0;border-radius:17px;cursor:pointer;color:#fff;font-weight:800;background:linear-gradient(135deg,#a94fff,#7028dd);box-shadow:0 12px 30px rgba(126,44,230,.25)}
-.download-btn:disabled{opacity:.6;cursor:not-allowed}
-.platforms{display:flex;justify-content:center;gap:10px;padding:15px 5px 4px;flex-wrap:wrap}
-.platform{color:#817b89;padding:7px 13px;font-size:14px}
-.result{margin:24px auto 0;width:min(850px,100%)}
-.status{display:none;padding:16px 18px;border-radius:15px;text-align:center;line-height:1.5}
-.status.show{display:block}
-.status.loading{color:#d7c2ff;background:rgba(123,43,208,.12);border:1px solid rgba(150,74,255,.2)}
-.status.success{color:#69e99d;background:rgba(50,220,130,.08);border:1px solid rgba(50,220,130,.15)}
-.status.error{color:#ff8d9d;background:rgba(255,60,90,.07);border:1px solid rgba(255,60,90,.16)}
-.media-list{display:grid;gap:20px;margin-top:20px}
-.media-card{overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:#100e16}
-.media-preview{width:100%;max-height:700px;display:block;object-fit:contain;background:#050407}
-.media-info{padding:18px}
-.media-title{font-size:20px;font-weight:800;margin-bottom:8px;word-break:break-word}
-.media-type{color:#aaa2b3;font-size:13px;margin-bottom:14px}
-.media-actions{display:flex;gap:10px}
-.media-actions button{flex:1;min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,#a94fff,#7028dd);font-weight:700;color:#fff;border:0;cursor:pointer;transition:opacity .2s}
-.media-actions button:hover{opacity:.9}
-.audio-box{padding:20px;background:#0b0910}
-.audio-box audio{width:100%}
-.audio-label{font-weight:800;margin-bottom:12px}
-.features{padding:50px 0 90px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.feature{min-height:210px;padding:28px;border:1px solid rgba(255,255,255,.07);border-radius:24px;background:rgba(16,14,22,.78)}
-.feature-icon{font-size:38px;margin-bottom:24px}
-.feature h2{font-size:22px;margin-bottom:10px}
-.feature p{color:#918b98;line-height:1.7}
-.footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#68636e;text-align:center;font-size:14px}
+  <style>
+    :root[data-theme="dark"] {
+      --bg-main: #09090b;
+      --bg-card: rgba(18, 18, 23, 0.85);
+      --bg-input: #14141a;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #fafafa;
+      --text-muted: #a1a1aa;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --primary-glow: rgba(139, 92, 246, 0.25);
+      --badge-bg: rgba(255, 255, 255, 0.05);
+      --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+    }
 
-@media(max-width:700px){
-.navbar{height:72px}
-.brand{font-size:21px}
-.logo{width:42px;height:42px;font-size:24px}
-.hero{padding:60px 0 30px}
-.hero h1{font-size:47px;letter-spacing:-2px}
-.hero p{font-size:16px}
-.form{flex-direction:column}
-.download-btn{width:100%}
-.features{grid-template-columns:1fr;padding-top:30px}
-.feature{min-height:auto}
-.media-actions{flex-direction:column}
-}
-</style>
+    :root[data-theme="light"] {
+      --bg-main: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --bg-input: #f1f5f9;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --primary-glow: rgba(124, 58, 237, 0.2);
+      --badge-bg: rgba(0, 0, 0, 0.04);
+      --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .glow-bg {
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0, 0, 0, 0) 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--primary), #ec4899);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.05rem;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.05rem;
+      text-decoration: none;
+      backdrop-filter: blur(10px);
+    }
+
+    .icon-btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* Main Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 32px 24px;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .hero-text {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .hero-text h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-text p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .platforms {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--badge-bg);
+      border: 1px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Input Box */
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .input-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-box input {
+      width: 100%;
+      height: 58px;
+      padding: 0 110px 0 46px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-weight: 500;
+      outline: none;
+    }
+
+    .input-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-glow);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .paste-btn {
+      position: absolute;
+      right: 8px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: none;
+      background: var(--badge-bg);
+      color: var(--text-main);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .paste-btn:hover {
+      background: var(--border-color);
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 56px;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), #9333ea);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 8px 20px var(--primary-glow);
+    }
+
+    .btn-submit:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Progress Animated Bar */
+    .progress-wrapper {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-input);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), #ec4899);
+      border-radius: 8px;
+      transition: width 0.3s ease;
+    }
+
+    /* Result Section */
+    #result-container {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 8px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .media-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px;
+    }
+
+    .media-preview-box {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-height: 480px;
+    }
+
+    .media-preview-box video, .media-preview-box img {
+      width: 100%;
+      max-height: 480px;
+      object-fit: contain;
+    }
+
+    .carousel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+
+    .carousel-item {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      aspect-ratio: 1/1;
+      border: 1px solid var(--border-color);
+      background: #000;
+    }
+
+    .carousel-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .carousel-item .item-dl-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 36px;
+      height: 36px;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+
+    .carousel-item .item-dl-btn:hover {
+      background: var(--primary);
+    }
+
+    .media-info h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .action-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dl-btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .dl-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .dl-btn.audio-btn {
+      background: #059669;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+    }
+
+    .dl-btn.audio-btn:hover {
+      background: #047857;
+    }
+
+    .dl-btn.all-btn {
+      background: #2563eb;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      padding: 12px 20px;
+      background: #18181b;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: auto;
+      padding-top: 32px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+  </style>
 </head>
-
 <body>
-
-<header class="navbar container">
-<a class="brand" href="/">
-<span class="logo">☁️</span>
-<span>Cloupanz</span>
-</a>
-
-<a class="admin" href="/admin.html">Admin</a>
-</header>
-
-<main>
-
-<section class="hero container">
-
-<div class="badge">
-<span class="dot"></span>
-Downloader Online
-</div>
-
-<h1>
-Download <span class="gradient">Media</span>
-</h1>
-
-<p>
-Tempel link TikTok atau Instagram.
-Cloupanz akan mengambil media sesuai jenis aslinya.
-</p>
-
-<div class="download-box">
-
-<form class="form" id="downloadForm">
-
-<div class="input-wrap">
-<input
-id="urlInput"
-type="url"
-autocomplete="off"
-placeholder="Tempel link Instagram atau TikTok..."
-required>
-</div>
-
-<button
-class="download-btn"
-id="downloadBtn"
-type="submit">
-Download
-</button>
-
-</form>
-
-<div class="platforms">
-<span class="platform">Instagram</span>
-<span class="platform">TikTok</span>
-</div>
-
-</div>
-
-<div class="result">
-
-<div class="status" id="status"></div>
-
-<div class="media-list" id="mediaList"></div>
-
-</div>
-
-</section>
-
-<section class="features container">
-
-<div class="feature">
-<div class="feature-icon">🎬</div>
-<h2>Video</h2>
-<p>
-Jika link adalah video, hanya video yang ditampilkan.
-Audio tetap ikut di dalam video.
-</p>
-</div>
-
-<div class="feature">
-<div class="feature-icon">🖼️</div>
-<h2>Foto</h2>
-<p>
-Jika link adalah foto atau carousel, hanya foto yang ditampilkan.
-</p>
-</div>
-
-<div class="feature">
-<div class="feature-icon">🎵</div>
-<h2>Audio</h2>
-<p>
-Media foto TikTok yang mempunyai musik dapat menampilkan audio secara terpisah.
-</p>
-</div>
-
-</section>
-
-</main>
-
-<footer class="footer">
-© 2026 Cloupanz
-</footer>
-
-<script>
-const form=document.getElementById("downloadForm");
-const input=document.getElementById("urlInput");
-const downloadBtn=document.getElementById("downloadBtn");
-const statusBox=document.getElementById("status");
-const mediaList=document.getElementById("mediaList");
-
-function status(message,type="loading"){
-statusBox.className=`status show ${type}`;
-statusBox.textContent=message;
-}
-
-function clearResult(){
-statusBox.className="status";
-statusBox.textContent="";
-mediaList.innerHTML="";
-}
-
-function validUrl(url){
-try{
-const u=new URL(url);
-return u.protocol==="http:"||u.protocol==="https:";
-}catch{
-return false;
-}
-}
-
-function safeUrl(url){
-try{
-const u=new URL(url);
-if(u.protocol!=="http:"&&u.protocol!=="https:")return "";
-return u.href;
-}catch{
-return "";
-}
-}
-
-function normalizeResponse(data){
-const type=String(data.type||"").toLowerCase();
-
-const videoUrl=safeUrl(
-data.video_url||
-data.videoUrl||
-""
-);
-
-const audioUrl=safeUrl(
-data.audio_url||
-data.audioUrl||
-""
-);
-
-const images=[
-...(Array.isArray(data.images)?data.images:[])
-]
-.map(safeUrl)
-.filter(Boolean);
-
-if(type==="video"&&videoUrl){
-return{
-type:"video",
-title:data.title||"Cloupanz Video",
-videoUrl,
-thumbnail:safeUrl(data.thumbnail||"")
-};
-}
-
-if(
-(type==="image"||type==="carousel")&&
-images.length
-){
-return{
-type:images.length>1?"carousel":"image",
-title:data.title||"Cloupanz Foto",
-images,
-audioUrl
-};
-}
-
-if(type==="audio"&&audioUrl){
-return{
-type:"audio",
-title:data.title||"Cloupanz Audio",
-audioUrl
-};
-}
-
-if(videoUrl){
-return{
-type:"video",
-title:data.title||"Cloupanz Video",
-videoUrl,
-thumbnail:safeUrl(data.thumbnail||"")
-};
-}
-
-if(images.length){
-return{
-type:images.length>1?"carousel":"image",
-title:data.title||"Cloupanz Foto",
-images,
-audioUrl
-};
-}
-
-if(audioUrl){
-return{
-type:"audio",
-title:data.title||"Cloupanz Audio",
-audioUrl
-};
-}
-
-return null;
-}
-
-function downloadName(type,index=1){
-if(type==="video")return`cloupanz-video-${index}.mp4`;
-if(type==="image")return`cloupanz-photo-${index}.jpg`;
-if(type==="audio")return`cloupanz-audio-${index}.mp3`;
-return`cloupanz-media-${index}`;
-}
-
-async function downloadMedia(url,fileName,element){
-const oldText=element.textContent;
-
-try{
-element.disabled=true;
-element.textContent="Mengunduh...";
-
-// Coba download via blob jika server asal mengizinkan CORS
-const response=await fetch(url);
-if(!response.ok) throw new Error(`HTTP ${response.status}`);
-
-const blob=await response.blob();
-const blobUrl=URL.createObjectURL(blob);
-const a=document.createElement("a");
-
-a.href=blobUrl;
-a.download=fileName;
-document.body.appendChild(a);
-a.click();
-a.remove();
-
-setTimeout(()=>URL.revokeObjectURL(blobUrl),10000);
-
-element.textContent="✓ Selesai";
-setTimeout(()=>{
-element.textContent=oldText;
-element.disabled=false;
-},1500);
-
-}catch(error){
-// Fallback jika diblokir oleh CORS CDN: langsung buka link/download di browser
-element.disabled=false;
-element.textContent=oldText;
-
-const a=document.createElement("a");
-a.href=url;
-a.target="_blank";
-a.rel="noopener noreferrer";
-a.download=fileName;
-document.body.appendChild(a);
-a.click();
-a.remove();
-}
-}
-
-function createDownloadButton(url,label,file){
-const element=document.createElement("button");
-element.type="button";
-element.textContent=label;
-
-element.addEventListener("click",()=>{
-downloadMedia(url,file,element);
-});
-
-const wrapper=document.createElement("div");
-wrapper.className="media-actions";
-wrapper.appendChild(element);
-
-return wrapper;
-}
-
-function renderVideo(item){
-const card=document.createElement("div");
-card.className="media-card";
-
-const video=document.createElement("video");
-video.className="media-preview";
-video.controls=true;
-video.playsInline=true;
-video.preload="metadata";
-
-if(item.thumbnail){
-video.poster=item.thumbnail;
-}
-
-const source=document.createElement("source");
-source.src=item.videoUrl;
-source.type="video/mp4";
-video.appendChild(source);
-
-const info=document.createElement("div");
-info.className="media-info";
-
-const type=document.createElement("div");
-type.className="media-type";
-type.textContent="🎬 Video";
-
-const title=document.createElement("div");
-title.className="media-title";
-title.textContent=item.title;
-
-const actions=createDownloadButton(
-item.videoUrl,
-"⬇️ Download Video",
-downloadName("video")
-);
-
-info.appendChild(type);
-info.appendChild(title);
-info.appendChild(actions);
-
-card.appendChild(video);
-card.appendChild(info);
-
-mediaList.appendChild(card);
-}
-
-function renderImages(item){
-const images=item.images||[];
-
-images.forEach((url,index)=>{
-const card=document.createElement("div");
-card.className="media-card";
-
-const image=document.createElement("img");
-image.className="media-preview";
-image.src=url;
-image.alt=`Foto ${index+1}`;
-image.loading="lazy";
-
-const info=document.createElement("div");
-info.className="media-info";
-
-const type=document.createElement("div");
-type.className="media-type";
-type.textContent=`🖼️ Foto ${index+1}`;
-
-const title=document.createElement("div");
-title.className="media-title";
-title.textContent=item.title;
-
-const actions=createDownloadButton(
-url,
-`⬇️ Download Foto ${index+1}`,
-downloadName("image",index+1)
-);
-
-info.appendChild(type);
-info.appendChild(title);
-info.appendChild(actions);
-
-card.appendChild(image);
-card.appendChild(info);
-
-mediaList.appendChild(card);
-});
-}
-
-function renderAudio(item){
-const card=document.createElement("div");
-card.className="media-card";
-
-const audioBox=document.createElement("div");
-audioBox.className="audio-box";
-
-const label=document.createElement("div");
-label.className="audio-label";
-label.textContent="🎵 Audio";
-
-const audio=document.createElement("audio");
-audio.controls=true;
-audio.preload="metadata";
-
-const source=document.createElement("source");
-source.src=item.audioUrl;
-audio.appendChild(source);
-
-audioBox.appendChild(label);
-audioBox.appendChild(audio);
-
-const info=document.createElement("div");
-info.className="media-info";
-
-const title=document.createElement("div");
-title.className="media-title";
-title.textContent=item.title;
-
-const actions=createDownloadButton(
-item.audioUrl,
-"⬇️ Download Audio",
-downloadName("audio")
-);
-
-info.appendChild(title);
-info.appendChild(actions);
-
-card.appendChild(audioBox);
-card.appendChild(info);
-
-mediaList.appendChild(card);
-}
-
-function render(item){
-mediaList.innerHTML="";
-
-if(!item){
-status("❌ Media tidak ditemukan.","error");
-return;
-}
-
-if(item.type==="video"){
-renderVideo(item);
-status("✅ Video berhasil ditemukan.","success");
-return;
-}
-
-if(item.type==="image"||item.type==="carousel"){
-renderImages(item);
-
-if(item.audioUrl){
-renderAudio({
-title:"Audio / Musik",
-audioUrl:item.audioUrl
-});
-}
-
-status(`✅ ${item.images.length} foto berhasil ditemukan.`,"success");
-return;
-}
-
-if(item.type==="audio"){
-renderAudio(item);
-status("✅ Audio berhasil ditemukan.","success");
-return;
-}
-
-status("❌ Jenis media tidak dikenal.","error");
-}
-
-form.addEventListener("submit",async event=>{
-event.preventDefault();
-
-const url=input.value.trim();
-
-if(!validUrl(url)){
-status("❌ Link tidak valid.","error");
-return;
-}
-
-clearResult();
-
-downloadBtn.disabled=true;
-downloadBtn.textContent="Mengambil...";
-
-status("⏳ Mengambil media...");
-
-try{
-const response=await fetch("/api/download",{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Accept":"application/json"
-},
-body:JSON.stringify({url})
-});
-
-const text=await response.text();
-let data;
-
-try{
-data=JSON.parse(text);
-}catch{
-throw new Error("Server mengirim response bukan JSON.");
-}
-
-if(!response.ok){
-throw new Error(data?.message||data?.error||`Server error ${response.status}`);
-}
-
-if(data.success===false){
-throw new Error(data.message||data.error||"Media gagal diambil.");
-}
-
-const result=normalizeResponse(data);
-render(result);
-
-}catch(error){
-mediaList.innerHTML="";
-status(`❌ ${error.message||"Gagal mengambil media."}`,"error");
-}finally{
-downloadBtn.disabled=false;
-downloadBtn.textContent="Download";
-input.value=url;
-}
-});
-</script>
-
+  <div class="glow-bg"></div>
+
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+        </div>
+        <span>Cloupanz</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="theme-toggle" title="Ganti Tema">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <a href="https://t.me/Priiyweagbot" target="_blank" class="icon-btn" title="Buka Telegram Bot (@Priiyweagbot)">
+          <i class="fa-brands fa-telegram"></i>
+        </a>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="hero-text">
+        <h1>Unduh Media Tanpa Watermark</h1>
+        <p>Simpan Video, Foto Carousel, dan Audio Musik secara instan</p>
+      </div>
+
+      <div class="platforms">
+        <span class="platform-badge"><i class="fa-brands fa-tiktok"></i> TikTok</span>
+        <span class="platform-badge"><i class="fa-brands fa-instagram"></i> Instagram</span>
+        <span class="platform-badge"><i class="fa-brands fa-pinterest"></i> Pinterest</span>
+      </div>
+
+      <form id="download-form" class="input-wrapper">
+        <div class="input-box">
+          <i class="fa-solid fa-link input-icon"></i>
+          <input type="url" id="url-input" placeholder="Tempel tautan TikTok, IG, atau Pinterest..." required autocomplete="off" />
+          <button type="button" class="paste-btn" id="paste-btn">
+            <i class="fa-regular fa-paste"></i> Tempel
+          </button>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submit-btn">
+          <i class="fa-solid fa-bolt"></i> Unduh Sekarang
+        </button>
+
+        <!-- Progress Bar Animasi -->
+        <div class="progress-wrapper" id="progress-wrapper">
+          <div class="progress-header">
+            <span id="progress-status">Menghubungkan ke server...</span>
+            <span id="progress-percent">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+          </div>
+        </div>
+      </form>
+
+      <!-- Tempat Preview & Tombol Download -->
+      <div id="result-container"></div>
+    </main>
+
+    <footer>
+      <p>© 2026 Cloupanz • Terhubung dengan <a href="https://t.me/Priiyweagbot" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">@Priiyweagbot</a></p>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // 1. Controller Tema
+    const themeToggle = document.getElementById('theme-toggle');
+    const htmlRoot = document.documentElement;
+
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    htmlRoot.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const current = htmlRoot.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      htmlRoot.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateThemeIcon(next);
+    });
+
+    function updateThemeIcon(theme) {
+      themeToggle.innerHTML = theme === 'dark' 
+        ? '<i class="fa-solid fa-moon"></i>' 
+        : '<i class="fa-solid fa-sun"></i>';
+    }
+
+    // 2. Toast Notifikasi
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${msg}`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // 3. Auto-Paste Otomatis saat Layar Aktif
+    const urlInput = document.getElementById('url-input');
+    const pasteBtn = document.getElementById('paste-btn');
+
+    function isSupportedLink(text) {
+      return text && (
+        text.includes('tiktok.com') ||
+        text.includes('instagram.com') ||
+        text.includes('instagr.am') ||
+        text.includes('pinterest.com') ||
+        text.includes('pin.it')
+      );
+    }
+
+    async function checkAutoPaste() {
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) return;
+        const text = await navigator.clipboard.readText();
+        if (text && isSupportedLink(text) && urlInput.value !== text.trim()) {
+          urlInput.value = text.trim();
+          showToast('📋 Tautan otomatis disalin dari papan klip!');
+        }
+      } catch (err) {
+        // Abaikan jika browser tidak mengizinkan akses clipboard otomatis
+      }
+    }
+
+    window.addEventListener('focus', checkAutoPaste);
+    document.addEventListener('DOMContentLoaded', checkAutoPaste);
+
+    pasteBtn.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          urlInput.value = text.trim();
+          showToast('Tautan berhasil ditempel!');
+        }
+      } catch {
+        showToast('Gagal mengakses clipboard.');
+      }
+    });
+
+    // 4. Helper Unduh Langsung ke Perangkat (Direct File Download)
+    async function forceDownloadFile(fileUrl, fileName, btnEl) {
+      const originalText = btnEl ? btnEl.innerHTML : '';
+      if (btnEl) {
+        btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+        btnEl.style.pointerEvents = 'none';
+      }
+
+      try {
+        const res = await fetch(fileUrl);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileName || 'media_cloupanz';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        showToast('✅ Berhasil disimpan ke galeri/file!');
+      } catch {
+        window.open(fileUrl, '_blank');
+      } finally {
+        if (btnEl) {
+          btnEl.innerHTML = originalText;
+          btnEl.style.pointerEvents = 'auto';
+        }
+      }
+    }
+
+    // 5. Animasi Progress Bar
+    const progressWrapper = document.getElementById('progress-wrapper');
+    const progressFill = document.getElementById('progress-fill');
+    const progressStatus = document.getElementById('progress-status');
+    const progressPercent = document.getElementById('progress-percent');
+
+    function setProgress(percent, status) {
+      progressFill.style.width = `${percent}%`;
+      progressPercent.innerText = `${percent}%`;
+      if (status) progressStatus.innerText = status;
+    }
+
+    // 6. Eksekusi Download Form
+    const form = document.getElementById('download-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultContainer = document.getElementById('result-container');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = urlInput.value.trim();
+      if (!url) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Memproses...';
+      progressWrapper.style.display = 'flex';
+      resultContainer.style.display = 'none';
+      resultContainer.innerHTML = '';
+
+      setProgress(25, 'Menganalisis link postingan...');
+
+      try {
+        setTimeout(() => setProgress(65, 'Mengekstrak file kualitas tinggi...'), 400);
+
+        const response = await fetch('/api/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        setProgress(90, 'Menyiapkan pratinjau media...');
+        const data = await response.json();
+
+        if (!data.success) throw new Error(data.message || 'Gagal memproses tautan.');
+
+        setProgress(100, 'Selesai!');
+        setTimeout(() => {
+          progressWrapper.style.display = 'none';
+          renderResult(data);
+        }, 400);
+      } catch (err) {
+        progressWrapper.style.display = 'none';
+        showToast(err.message || 'Terjadi kesalahan saat memproses.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> Unduh Sekarang';
+      }
+    });
+
+    // 7. Render Pratinjau & Tombol Simpan
+    function renderResult(data) {
+      let previewHtml = '';
+
+      // Tipe Video
+      if (data.type === 'video' && data.video_url) {
+        previewHtml = `
+          <div class="media-preview-box">
+            <video controls playsinline src="${data.video_url}"></video>
+          </div>
+          <div class="action-group">
+            <button onclick="forceDownloadFile('${data.video_url}', 'video_cloupanz.mp4', this)" class="dl-btn">
+              <i class="fa-solid fa-download"></i> Simpan Video (MP4)
+            </button>
+          </div>
+        `;
+      } 
+  // Tipe Foto / Carousel Album
+      else if ((data.type === 'carousel' || data.type === 'image') && data.images && data.images.length > 0) {
+        if (data.images.length === 1) {
+          previewHtml = `
+            <div class="media-preview-box">
+              <img src="${data.images[0]}" alt="Preview" />
+            </div>
+            <div class="action-group">
+              <button onclick="forceDownloadFile('${data.images[0]}', 'photo_cloupanz.jpg', this)" class="dl-btn">
+                <i class="fa-solid fa-download"></i> Simpan Foto HD
+              </button>
+            </div>
+          `;
+        } else {
+          const gridItems = data.images.map((img, i) => `
+            <div class="carousel-item">
+              <img src="${img}" alt="Slide ${i+1}" loading="lazy" />
+              <button onclick="forceDownloadFile('${img}', 'slide_${i+1}.jpg', this)" class="item-dl-btn" title="Simpan Foto ${i+1}">
+                <i class="fa-solid fa-download"></i>
+              </button>
+            </div>
+          `).join('');
+
+          previewHtml = `
+            <div class="carousel-grid">${gridItems}</div>
+            <div class="action-group" style="margin-top: 6px;">
+              <button onclick="downloadAllImages(${JSON.stringify(data.images).replace(/"/g, '&quot;')}, this)" class="dl-btn all-btn">
+                <i class="fa-solid fa-images"></i> Simpan Semua Foto (${data.images.length})
+              </button>
+            </div>
+          `;
+        }
+      }
+
+      // Audio jika ada
+      let audioHtml = '';
+      if (data.audio_url) {
+        audioHtml = `
+          <button onclick="forceDownloadFile('${data.audio_url}', 'audio_cloupanz.mp3', this)" class="dl-btn audio-btn">
+            <i class="fa-solid fa-music"></i> Simpan Musik / Audio (MP3)
+          </button>
+        `;
+      }
+
+      resultContainer.innerHTML = `
+        <div class="media-card">
+          <div class="media-info">
+            <h3>${data.title || 'Media Cloupanz'}</h3>
+          </div>
+          ${previewHtml}
+          ${audioHtml}
+        </div>
+      `;
+
+      resultContainer.style.display = 'flex';
+      resultContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Helper Download Seluruh Foto Sekaligus
+    async function downloadAllImages(images, btnEl) {
+      const originalText = btnEl.innerHTML;
+      btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan semua foto...';
+      btnEl.style.pointerEvents = 'none';
+
+      for (let i = 0; i < images.length; i++) {
+        await forceDownloadFile(images[i], `slide_${i + 1}.jpg`, null);
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      btnEl.innerHTML = originalText;
+      btnEl.style.pointerEvents = 'auto';
+    }
+  </script>
 </body>
 </html>
